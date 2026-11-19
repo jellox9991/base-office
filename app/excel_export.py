@@ -7,10 +7,10 @@ from .logic import scope_label, WORK_LABELS
 from .readiness import missing_information, trade_readiness
 from .util import fmt_date
 
-INK = "1F2A37"
-TEAL = "0F766E"
+INK = "0A0A0A"
+TEAL = "F90130"
 HEAD = PatternFill("solid", fgColor=INK)
-SUB = PatternFill("solid", fgColor="E6F2F1")
+SUB = PatternFill("solid", fgColor="F2F2F2")
 ALLOW = PatternFill("solid", fgColor="FFF4CC")
 THIN = Side(style="thin", color="C9D2D9")
 BOX = Border(left=THIN, right=THIN, top=THIN, bottom=THIN)

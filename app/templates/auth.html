@@ -1,8 +1,9 @@
 {% extends 'base.html' %}{% from '_m.html' import csrf with context %}
+{% block bodyclass %}auth-page{% endblock %}
 {% block body %}
-<div class="auth card">
-  <div class="spread"><h1>{{ settings.company_name or 'BASE Design' }} {{ L('Office', 'المكتب') }}</h1>
-  {% if lang == 'ar' %}<a href="{{ url_for('set_lang', code='en') }}">English</a>{% else %}<a href="{{ url_for('set_lang', code='ar') }}">عربي</a>{% endif %}</div>
+<div class="auth">
+  <img class="logo" src="{{ url_for('static', filename='brand/logo.png') }}" alt="{{ settings.company_name or 'BASE Design' }}" width="1058" height="417">
+  <p class="tag">{{ L('Office', 'المكتب') }}</p>
   {% if mode == 'setup' %}<p class="muted">{{ L('First use: create your private sign-in. Only this account can open BASE Office.', 'أول استخدام: اعمل حساب الدخول الخاص فيك. بس هالحساب بيقدر يفتح النظام.') }}</p>{% endif %}
   {% if error %}<div class="flash error" role="alert">{{ error }}</div>{% endif %}
   <form method="post">{{ csrf() }}
@@ -11,5 +12,6 @@
     {% if mode == 'setup' %}<div class="field"><label for="p2">{{ L('Repeat password', 'أعد كلمة السر') }}</label><input id="p2" name="password2" type="password" autocomplete="new-password" required></div>{% endif %}
     <button class="btn primary" style="width:100%">{{ L('Create sign-in', 'إنشاء الحساب') if mode == 'setup' else L('Sign in', 'دخول') }}</button>
   </form>
+  {% if lang == 'ar' %}<a class="lang" href="{{ url_for('set_lang', code='en') }}" lang="en">English</a>{% else %}<a class="lang" href="{{ url_for('set_lang', code='ar') }}" lang="ar">عربي</a>{% endif %}
 </div>
 {% endblock %}

@@ -4,10 +4,12 @@ from fpdf import FPDF
 from .logic import scope_label
 from .util import fmt_kwd, fmt_date
 
-FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
-INK = (31, 42, 55)
-TEAL = (15, 118, 110)
-GREY = (110, 120, 130)
+HERE = os.path.dirname(__file__)
+FONT_DIR = os.path.join(HERE, "static", "fonts")       # Outfit + Tajawal, the same fonts as the BASE site
+BRAND_LOGO = os.path.join(HERE, "static", "brand", "logo.png")   # white BASE logo with the red A, transparent
+INK = (10, 10, 10)
+TEAL = (249, 1, 48)        # brand red accent (name kept so the layout code stays unchanged)
+GREY = (95, 95, 95)
 
 T = {
     "quotation": ("QUOTATION", "عرض سعر"),
@@ -50,10 +52,11 @@ class BasePDF(FPDF):
         self.lang = lang
         self.rtl = lang == "ar"
         self.settings = settings
-        self.add_font("ar", fname=os.path.join(FONT_DIR, "NotoNaskhArabic-Regular.ttf"))
-        self.add_font("ar", style="B", fname=os.path.join(FONT_DIR, "NotoNaskhArabic-Bold.ttf"))
-        self.add_font("en", fname=os.path.join(FONT_DIR, "NotoSans-Regular.ttf"))
-        self.add_font("en", style="B", fname=os.path.join(FONT_DIR, "NotoSans-Bold.ttf"))
+        self.add_font("ar", fname=os.path.join(FONT_DIR, "Tajawal-400.ttf"))
+        self.add_font("ar", style="B", fname=os.path.join(FONT_DIR, "Tajawal-700.ttf"))
+        self.add_font("en", fname=os.path.join(FONT_DIR, "Outfit-400.ttf"))
+        self.add_font("en", style="B", fname=os.path.join(FONT_DIR, "Outfit-600.ttf"))
+        self.add_font("thin", fname=os.path.join(FONT_DIR, "Outfit-300.ttf"))
         self.main = "ar" if self.rtl else "en"
         self.set_fallback_fonts(["en" if self.rtl else "ar"])
         self.set_text_shaping(use_shaping_engine=True)
@@ -78,21 +81,30 @@ class BasePDF(FPDF):
     def header(self):
         s = self.settings
         logo = s.get("_logo_path")
+        if not (logo and os.path.exists(logo)):
+            logo = BRAND_LOGO
         self.set_fill_color(*INK)
-        self.rect(0, 0, self.w, 26, "F")
-        if logo and os.path.exists(logo):
-            try:
-                self.image(logo, x=(self.w - 16 - 30) if self.rtl else 16, y=4, h=18)
-            except Exception:
-                pass
-        name = s.get("company_name") or "BASE Design"   # the brand stays "BASE Design" in both languages
-        self.set_xy(16, 6)
-        self.f(18, True, (255, 255, 255))
-        self.cell(self.w - 32, 9, name, align="L" if self.rtl else "R")
-        self.set_xy(16, 15)
-        self.f(9, False, (200, 230, 226))
-        self.cell(self.w - 32, 6, s.get("company_email", ""), align="L" if self.rtl else "R")
-        self.set_y(32)
+        self.rect(0, 0, self.w, 30, "F")
+        self.set_fill_color(*TEAL)
+        self.rect(0, 30, self.w, 0.8, "F")
+        try:
+            self.image(logo, x=16, y=6, h=18)     # the logo is Latin, so it sits on the left in both languages
+        except Exception:
+            self.set_xy(16, 9)
+            self.set_font("thin", "", 20)
+            self.set_text_color(255, 255, 255)
+            self.cell(60, 10, "B A S E")
+        self.set_font("thin", "", 7.5)
+        self.set_text_color(255, 255, 255)
+        self.set_char_spacing(2.2)
+        self.set_xy(self.w - 16 - 90, 9)
+        self.cell(90, 6, (s.get("company_name") or "BASE Design").upper(), align="R")
+        self.set_char_spacing(0)
+        self.set_font("en", "", 8.5)
+        self.set_text_color(200, 200, 200)
+        self.set_xy(self.w - 16 - 90, 15)
+        self.cell(90, 6, s.get("company_email", ""), align="R")
+        self.set_y(38)
 
     def footer(self):
         s = self.settings
@@ -113,31 +125,38 @@ class BasePDF(FPDF):
         y = self.get_y()
         if self.rtl:
             self.set_x(16 + w_val)
-            self.f(10, True, TEAL)
+            self.f(10, True, GREY)
             self.cell(w_label, 7, self.t(key), align="R")
             self.set_xy(16, y)
             self.f(10)
             self.multi_cell(w_val, 7, str(value), align="R", new_x="LMARGIN", new_y="NEXT")
         else:
             self.set_x(16)
-            self.f(10, True, TEAL)
+            self.f(10, True, GREY)
             self.cell(w_label, 7, self.t(key), align="L")
             self.f(10)
             self.multi_cell(w_val, 7, str(value), align="L", new_x="LMARGIN", new_y="NEXT")
 
     def title_bar(self, text):
         self.ln(2)
-        self.f(16, True, INK)
+        if self.rtl:
+            self.f(17, True, INK)
+        else:
+            self.set_font("thin", "", 17)
+            self.set_text_color(*INK)
+            self.set_char_spacing(2.5)
         self.cell(0, 10, text, align=self.align, new_x="LMARGIN", new_y="NEXT")
+        self.set_char_spacing(0)
         self.set_draw_color(*TEAL)
         self.set_line_width(0.6)
-        self.line(16, self.get_y(), self.w - 16, self.get_y())
+        x0 = self.w - 16 - 18 if self.rtl else 16
+        self.line(x0, self.get_y(), x0 + 18, self.get_y())    # short red rule, like the site headings
         self.set_line_width(0.2)
         self.ln(3)
 
     def section(self, key):
         self.ln(2)
-        self.line_text(self.t(key), 11, True, TEAL, h=7)
+        self.line_text(self.t(key), 11, True, INK, h=7)
 
     def money_table(self, items, subtotal, discount, total):
         W = self.w - 32
@@ -187,7 +206,7 @@ class BasePDF(FPDF):
         if discount:
             total_row(self.t("subtotal"), fmt_kwd(subtotal))
             total_row(self.t("discount"), "-" + fmt_kwd(discount))
-        self.set_fill_color(230, 242, 241)
+        self.set_fill_color(240, 240, 240)
         y = self.get_y()
         self.rect(16, y, W, 9, "F")
         total_row(f"{self.t('total')} ({self.t('kwd')})", fmt_kwd(total), bold=True)
