@@ -4,7 +4,7 @@
 <div class="spread">
   <div>
     <h1 dir="auto" style="margin-bottom:2px">{{ p.name }}</h1>
-    <div class="muted"><bdi dir="ltr">{{ p.number }}</bdi> · <a href="{{ url_for('client_view', cid=client.id) }}">{{ client.name }}</a>{% if p.owner_name %} · {{ L('Owner', 'المالك') }}: {{ p.owner_name }}{% endif %}{% if p.archived %} · <span class="b b-expired">{{ L('Archived', 'مؤرشف') }}</span>{% endif %}</div>
+    <div class="muted"><bdi dir="ltr">{{ p.number }}</bdi> · <a href="{{ url_for('client_view', cid=client.id) }}"><bdi>{{ client.name }}</bdi></a>{% if p.owner_name %} · {{ L('Owner', 'المالك') }}: <bdi>{{ p.owner_name }}</bdi>{% endif %}{% if p.archived %} · <span class="b b-expired">{{ L('Archived', 'مؤرشف') }}</span>{% endif %}</div>
     <div style="margin-top:6px">{{ badge(WORK, p.work_status) }} {{ badge(SUB, sub.status) }} {{ badge(MONEY, money.state) }}</div>
   </div>
   <div class="head-actions no-print">

@@ -52,11 +52,10 @@
 
 {% if rows %}
 <div class="tbl-wrap"><table class="cards">
-<thead><tr><th>{{ L('No.', 'الرقم') }}</th><th>{{ L('Project', 'المشروع') }}</th><th>{{ L('Client', 'العميل') }}</th><th>{{ L('Location', 'الموقع') }}</th><th>{{ L('Scope', 'النطاق') }}</th><th>{{ L('Due', 'التسليم') }}</th><th>{{ L('Work', 'العمل') }}</th><th>{{ L('Submission', 'التسليم') }}</th><th class="r">{{ L('Fee', 'الأتعاب') }}</th><th class="r">{{ L('Received', 'المستلم') }}</th><th class="r">{{ L('Balance', 'المتبقي') }}</th></tr></thead>
+<thead><tr><th style="min-width:200px">{{ L('Project', 'المشروع') }}</th><th>{{ L('Client', 'العميل') }}</th><th>{{ L('Location', 'الموقع') }}</th><th>{{ L('Scope', 'النطاق') }}</th><th>{{ L('Due', 'التسليم') }}</th><th>{{ L('Work', 'العمل') }}</th><th>{{ L('Submission', 'التسليم') }}</th><th class="r">{{ L('Fee', 'الأتعاب') }}</th><th class="r">{{ L('Received', 'المستلم') }}</th><th class="r">{{ L('Balance', 'المتبقي') }}</th></tr></thead>
 <tbody>
 {% for r in rows %}
 <tr class="{{ 'overdue' if r.overdue }}">
-  <td data-l="{{ L('No.', 'الرقم') }}" class="hide-m"><bdi dir="ltr" class="num">{{ r.number }}</bdi></td>
   <td class="first"><a class="pname" href="{{ url_for('project_view', pid=r.id) }}">{{ r.name }}</a>{% if r.overdue %} <span class="b b-overdue">{{ L('Overdue', 'متأخر') }}</span>{% endif %}
     <div class="small muted"><bdi dir="ltr">{{ r.number }}</bdi>{% if flt == 'waiting' and r.missing_info %} · {{ L('Missing', 'ناقص') }}: {{ r.missing_info.splitlines()[-1] }}{% endif %}</div></td>
   <td data-l="{{ L('Client', 'العميل') }}">{{ r.client_name }}</td>

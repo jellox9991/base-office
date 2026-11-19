@@ -85,7 +85,7 @@ class BasePDF(FPDF):
                 self.image(logo, x=(self.w - 16 - 30) if self.rtl else 16, y=4, h=18)
             except Exception:
                 pass
-        name = s.get("company_name_ar") if self.rtl and s.get("company_name_ar") else s.get("company_name", "BASE Design")
+        name = s.get("company_name") or "BASE Design"   # the brand stays "BASE Design" in both languages
         self.set_xy(16, 6)
         self.f(18, True, (255, 255, 255))
         self.cell(self.w - 32, 9, name, align="L" if self.rtl else "R")

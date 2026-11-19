@@ -1,0 +1,163 @@
+{
+  "schema": "base-office/revit-import",
+  "schemaVersion": "1.0",
+  "generator": "BASE Design Office",
+  "exportedAt": "2026-11-19T13:46:16+03:00",
+  "units": {
+    "length": "mm",
+    "elevations": "Millimetres relative to project ±0.000, placed at the Revit internal origin (Z = 0).",
+    "coordinates": "Millimetres in plan from the Revit internal origin (0,0). +X = project east, +Y = project north."
+  },
+  "project": {
+    "stableId": "3b097adc8aae49e98c9c1acdad8be66c",
+    "number": "BASE-2026-001",
+    "name": "فيلا الياسمين - صباح الأحمد",
+    "client": "شركة النخيل للمقاولات (وهمية)",
+    "owner": "خالد العلي",
+    "address": "صباح الأحمد, Block 3, Street 12, Plot 120",
+    "buildingType": "villa"
+  },
+  "levels": [
+    {
+      "stableId": "0a9e746be1e14e8b87008f90c9f1c44b",
+      "name": "Basement",
+      "elevationMm": -3400,
+      "datum": "FFL",
+      "kind": "basement",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "c66edc4ca9b0407499d7892a3ef8843e",
+      "name": "Ground Floor",
+      "elevationMm": 600,
+      "datum": "FFL",
+      "kind": "ground",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "c66edc4ca9b0407499d7892a3ef8843e:ssl",
+      "name": "Ground Floor - Slab Top",
+      "elevationMm": 500,
+      "datum": "SSL",
+      "kind": "ground",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "6430820696704711b446fcaab1daf824",
+      "name": "First Floor",
+      "elevationMm": 4600,
+      "datum": "FFL",
+      "kind": "upper",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "6430820696704711b446fcaab1daf824:ssl",
+      "name": "First Floor - Slab Top",
+      "elevationMm": 4500,
+      "datum": "SSL",
+      "kind": "upper",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "1007390a034240d290569b60ee40b757",
+      "name": "Second Floor",
+      "elevationMm": 8600,
+      "datum": "FFL",
+      "kind": "upper",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "1007390a034240d290569b60ee40b757:ssl",
+      "name": "Second Floor - Slab Top",
+      "elevationMm": 8500,
+      "datum": "SSL",
+      "kind": "upper",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "9b569f59f419491196df4feaea2d471e",
+      "name": "Roof",
+      "elevationMm": 12600,
+      "datum": "FFL",
+      "kind": "roof",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "9b569f59f419491196df4feaea2d471e:ssl",
+      "name": "Roof - Slab Top",
+      "elevationMm": 12500,
+      "datum": "SSL",
+      "kind": "roof",
+      "status": "confirmed"
+    },
+    {
+      "stableId": "dac0e77b369343e395376f2e15322e5a",
+      "name": "Upper Roof",
+      "elevationMm": 16600,
+      "datum": "FFL",
+      "kind": "roof_structure",
+      "status": "confirmed"
+    }
+  ],
+  "grids": [
+    {
+      "stableId": "9e855cbc45684c7890c8446598742e9c",
+      "name": "A",
+      "startMm": [
+        0,
+        -1500
+      ],
+      "endMm": [
+        0,
+        16500
+      ]
+    },
+    {
+      "stableId": "c2f8e6db5c9944558c0d0d9407cc596b",
+      "name": "B",
+      "startMm": [
+        12000,
+        -1500
+      ],
+      "endMm": [
+        12000,
+        16500
+      ]
+    },
+    {
+      "stableId": "1a0847c41a3b4ff0bb2adb7a1b0da534",
+      "name": "1",
+      "startMm": [
+        -1500,
+        0
+      ],
+      "endMm": [
+        13500,
+        0
+      ]
+    },
+    {
+      "stableId": "ff17306a44e84a5e9b23f89627fd1963",
+      "name": "2",
+      "startMm": [
+        -1500,
+        15000
+      ],
+      "endMm": [
+        13500,
+        15000
+      ]
+    }
+  ],
+  "omitted": [],
+  "sourceReferences": [
+    {
+      "title": "Structural set",
+      "discipline": "Structural",
+      "revision": "R0",
+      "file": "STR-R0.pdf",
+      "sha256": "71077e8389695f09b1e50bcfc288fb4998894a86ae7cd9657b31ac618a094eab"
+    }
+  ],
+  "notes": "Drawings are listed as source references only. The importer creates model elements only from 'levels' and 'grids'."
+}

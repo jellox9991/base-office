@@ -270,7 +270,7 @@ DEFAULT_SETTINGS = {
     "company_phone": "",
     "company_address": "Kuwait",
     "quotation_footer": "BASE Design | Quantity takeoff & BOQ services | Kuwait",
-    "quotation_footer_ar": "بيس ديزاين | خدمات حصر الكميات وجداول الكميات | الكويت",
+    "quotation_footer_ar": "BASE Design | خدمات حصر الكميات وجداول الكميات | الكويت",
     "number_prefix": "BASE",
     "quote_prefix": "QT",
     "default_validity_days": "14",

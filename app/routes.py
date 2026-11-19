@@ -1,6 +1,7 @@
 """HTTP routes for BASE Design Office."""
 import hashlib
 import io
+import re
 import json
 import os
 import uuid
@@ -217,6 +218,8 @@ def register(app):
             if not cid and not new_client:
                 errors["client_id"] = "Select a client or type a new client name"
             key = request.form.get("request_key") or ""
+            if not re.fullmatch(r"[0-9a-f]{32}", key):
+                key = ""  # the form key doubles as the project's stable ID, so it must be a fresh uuid
             if not errors:
                 dup = db.execute("SELECT id FROM projects WHERE uid = ?", (key,)).fetchone() if key else None
                 if dup:  # double-submitted form

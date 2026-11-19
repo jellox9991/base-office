@@ -112,6 +112,7 @@ tr.overdue td:first-child { box-shadow: inset 3px 0 0 var(--red); }
 table.edit input, table.edit select { min-height: 34px; padding: 4px 6px; font-size: 13px; }
 table.edit td { padding: 4px; }
 table.edit .w-s { width: 80px; } table.edit .w-m { width: 120px; } table.edit .w-l { min-width: 150px; }
+table.edit select { min-width: 120px; }
 tr.moved td { background: #fffbe6; }
 
 /* tabs */

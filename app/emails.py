@@ -23,7 +23,7 @@ def draft(kind, lang, settings, project, client, money=None, quotation=None, sco
     contact = client["contact_person"] or client["name"]
     name, no = project["name"], project["number"]
     sig_en = f"\n\nBest regards,\n{company}\n{email}"
-    sig_ar = f"\n\nمع التحية،\n{settings.get('company_name_ar') or company}\n{email}"
+    sig_ar = f"\n\nمع التحية،\n{company}\n{email}"
     if kind == "quotation":
         qno = f"{quotation['number']} Rev {quotation['revision']}" if quotation else ""
         total = fmt_kwd(quotation["_total"]) if quotation else ""

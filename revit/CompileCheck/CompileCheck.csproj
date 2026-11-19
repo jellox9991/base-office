@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles the real add-in sources as C# 5 / .NET Framework 4.8 against a signatures-only Revit stub. -->
+  <PropertyGroup><TargetFramework>net48</TargetFramework><LangVersion>5</LangVersion><OutputType>Library</OutputType>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems><TreatWarningsAsErrors>false</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../BaseOfficeImport/Core/*.cs" />
+    <Compile Include="../BaseOfficeImport/Revit/*.cs" />
+    <ProjectReference Include="RevitApiStub/RevitApiStub.csproj" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <Reference Include="System.Windows.Forms" /><Reference Include="System.Drawing" />
+  </ItemGroup>
+</Project>
