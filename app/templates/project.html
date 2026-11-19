@@ -1,0 +1,96 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf, field, badge, money as kd with context %}
+{% block title %}{{ p.name }} · {{ p.number }}{% endblock %}
+{% block body %}
+<div class="spread">
+  <div>
+    <h1 dir="auto" style="margin-bottom:2px">{{ p.name }}</h1>
+    <div class="muted"><bdi dir="ltr">{{ p.number }}</bdi> · <a href="{{ url_for('client_view', cid=client.id) }}">{{ client.name }}</a>{% if p.owner_name %} · {{ L('Owner', 'المالك') }}: {{ p.owner_name }}{% endif %}{% if p.archived %} · <span class="b b-expired">{{ L('Archived', 'مؤرشف') }}</span>{% endif %}</div>
+    <div style="margin-top:6px">{{ badge(WORK, p.work_status) }} {{ badge(SUB, sub.status) }} {{ badge(MONEY, money.state) }}</div>
+  </div>
+  <div class="head-actions no-print">
+    <a class="btn primary" href="{{ url_for('project_view', pid=p.id, tab='payments') }}#pay">{{ L('Record payment', 'تسجيل دفعة') }}</a>
+    <a class="btn primary" href="{{ url_for('project_view', pid=p.id, tab='drawings') }}#deliver">{{ L('Record submission', 'تسجيل تسليم') }}</a>
+    <a class="btn" href="{{ url_for('quotation_new', project_id=p.id) }}">{{ L('New quotation', 'عرض سعر جديد') }}</a>
+  </div>
+</div>
+
+<form class="row no-print" method="post" action="{{ url_for('project_status', pid=p.id) }}" style="margin:10px 0">{{ csrf() }}
+  <div class="field" style="flex:0 1 240px"><label for="ws">{{ L('Work status', 'حالة العمل') }}</label>
+    <select id="ws" name="work_status">{% for k in WORK %}<option value="{{ k }}" {{ 'selected' if p.work_status == k }}>{{ label(WORK, k) }}</option>{% endfor %}</select></div>
+  <div class="field" style="flex:1 1 240px"><label for="wsn">{{ L('Note (e.g. which drawing is missing)', 'ملاحظة (مثلاً أي مخطط ناقص)') }}</label><input id="wsn" name="note"></div>
+  <div class="field" style="flex:0 0 auto"><button class="btn">{{ L('Update', 'تحديث') }}</button></div>
+</form>
+
+{% set tabs = [('overview', L('Overview', 'نظرة عامة')), ('floors', L('Floors & BOQ', 'الأدوار وجدول الكميات')), ('drawings', L('Drawings & submissions', 'المخططات والتسليمات')), ('quotations', L('Quotations', 'العروض')), ('payments', L('Payments', 'الدفعات')), ('archive', L('Archive', 'الأرشيف')), ('activity', L('Activity', 'السجل'))] %}
+<nav class="tabs">{% for k, t in tabs %}<a href="{{ url_for('project_view', pid=p.id, tab=k) }}" class="{{ 'on' if tab == k }}">{{ t }}</a>{% endfor %}</nav>
+
+{% if tab == 'overview' %}
+<div class="row" style="align-items:stretch">
+  <div class="card" style="flex:2 1 360px">
+    <dl class="kv">
+      <dt>{{ L('Client', 'العميل') }}</dt><dd>{{ client.name }}{% if client.contact_person %} · {{ client.contact_person }}{% endif %}{% set w = wa(client.whatsapp or client.phone) %}{% if w %} · <a href="{{ w }}" target="_blank" rel="noopener"><bdi dir="ltr">{{ client.whatsapp or client.phone }}</bdi></a>{% endif %}</dd>
+      <dt>{{ L('Email', 'الإيميل') }}</dt><dd><bdi dir="ltr">{{ client.email or '—' }}</bdi></dd>
+      <dt>{{ L('Location', 'الموقع') }}</dt><dd>{{ p.area or '—' }}{% if p.block %}, {{ L('Block', 'قطعة') }} {{ p.block }}{% endif %}{% if p.street %}, {{ L('Street', 'شارع') }} {{ p.street }}{% endif %}{% if p.plot %}, {{ L('Plot', 'قسيمة') }} {{ p.plot }}{% endif %}{% if p.map_link %} · <a href="{{ p.map_link }}" target="_blank" rel="noopener">{{ L('Map', 'الخريطة') }}</a>{% endif %}</dd>
+      <dt>{{ L('Building', 'المبنى') }}</dt><dd>{{ p.building_type or '—' }} · {{ explanation }}</dd>
+      <dt>{{ L('Scope', 'النطاق') }}</dt><dd>{% for s in scope %}{{ scope_label(s) }}{{ ', ' if not loop.last }}{% else %}—{% endfor %}</dd>
+      <dt>{{ L('Exclusions', 'الاستثناءات') }}</dt><dd>{{ p.exclusions or '—' }}</dd>
+      <dt>{{ L('Excel template', 'قالب الإكسل') }}</dt><dd>{{ p.excel_template or '—' }}</dd>
+      <dt>{{ L('Received / due', 'الاستلام / التسليم') }}</dt><dd class="num">{{ d(p.date_received, '—') }} → {{ d(p.due_date, '—') }}</dd>
+      <dt>{{ L('Responsible', 'المسؤول') }}</dt><dd>{{ p.responsible or '—' }}</dd>
+      <dt>{{ L('Delivered so far', 'المسلّم لحد الآن') }}</dt><dd>{% for s in sub.delivered %}{{ scope_label(s) }}{{ ', ' if not loop.last }}{% else %}—{% endfor %}{% if sub.remaining and sub.status == 'partial' %} · {{ L('Remaining', 'الباقي') }}: {% for s in sub.remaining %}{{ scope_label(s) }}{{ ', ' if not loop.last }}{% endfor %}{% endif %}</dd>
+      {% if p.internal_notes %}<dt>{{ L('Internal notes', 'ملاحظات داخلية') }}</dt><dd>{{ p.internal_notes }}</dd>{% endif %}
+    </dl>
+  </div>
+  <div class="card" style="flex:1 1 280px">
+    <h3>{{ L('Money', 'المالية') }}</h3>
+    <div class="money-box">
+      <div><div class="small muted">{{ L('Agreed fee', 'الأتعاب') }}</div><div class="v">{% if money.fee is none %}<span class="b b-pending_agreement">{{ label(MONEY, 'pending_agreement') }}</span>{% else %}{{ kd(money.fee) }}{% endif %}</div></div>
+      <div><div class="small muted">{{ L('Received', 'المستلم') }}</div><div class="v">{{ kd(money.received) }}</div></div>
+      <div><div class="small muted">{{ L('Balance', 'المتبقي') if (money.balance or 0) >= 0 else L('Client credit', 'رصيد دائن') }}</div><div class="v">{% if money.balance is none %}—{% else %}{{ kd(money.balance|abs) }}{% endif %}</div></div>
+    </div>
+    <p class="small muted">{{ L('KWD', 'د.ك') }}{% if p.fee_basis_note %} · {{ p.fee_basis_note }}{% endif %}</p>
+    <h3>{{ L('Emails', 'الإيميلات') }}</h3>
+    <div class="head-actions">
+      <a class="btn sm" href="{{ url_for('email_draft', pid=p.id, kind='quotation') }}">{{ L('Send quotation', 'إرسال العرض') }}</a>
+      <a class="btn sm" href="{{ url_for('email_draft', pid=p.id, kind='boq') }}">{{ L('Submit BOQ', 'تسليم الجدول') }}</a>
+      <a class="btn sm" href="{{ url_for('email_draft', pid=p.id, kind='payment') }}">{{ L('Payment follow-up', 'متابعة الدفعة') }}</a>
+    </div>
+  </div>
+</div>
+{% if missing %}<div class="card"><h3>{{ L('Missing information', 'المعلومات الناقصة') }} ({{ missing|length }})</h3><ul class="small">{% for it in missing[:12] %}<li><strong>{{ it.category }}</strong>: {{ it.item }}</li>{% endfor %}{% if missing|length > 12 %}<li><a href="{{ url_for('project_view', pid=p.id, tab='floors') }}">{{ L('All items', 'كل البنود') }}…</a></li>{% endif %}</ul></div>{% endif %}
+
+<form method="post" action="{{ url_for('project_edit', pid=p.id) }}" novalidate>{{ csrf() }}
+<input type="hidden" name="version" value="{{ p.version }}">
+<details class="sec"><summary>{{ L('Edit project details', 'تعديل بيانات المشروع') }}</summary><div class="in">
+  <div class="row">
+    {{ field('name', 'Project name', 'اسم المشروع', p.name, errors=errors, attrs='dir="auto" required') }}
+    <div class="field"><label for="f_cl">{{ L('Client', 'العميل') }}</label><select id="f_cl" name="client_id">{% for c in clients %}<option value="{{ c.id }}" {{ 'selected' if c.id == p.client_id }}>{{ c.name }}</option>{% endfor %}</select></div>
+  </div>
+</div></details>
+{% set v = p %}{% set open_all = false %}{% set show_fee = false %}
+{% include '_project_fields.html' %}
+<div class="row"><div><button class="btn primary">{{ L('Save changes', 'احفظ التعديلات') }}</button></div></div>
+</form>
+<form method="post" action="{{ url_for('project_archive', pid=p.id) }}" style="margin-top:14px">{{ csrf() }}<button class="btn sm">{{ L('Reopen project', 'أعد فتح المشروع') if p.archived else L('Archive project (hide from lists)', 'أرشفة المشروع (إخفاء من القوائم)') }}</button></form>
+
+{% elif tab == 'floors' %}
+{% include '_tab_floors.html' %}
+{% elif tab == 'drawings' %}
+{% include '_tab_drawings.html' %}
+{% elif tab == 'quotations' %}
+<div class="spread"><h2>{{ L('Quotations', 'العروض') }}</h2><a class="btn primary" href="{{ url_for('quotation_new', project_id=p.id) }}">{{ L('New quotation', 'عرض سعر جديد') }}</a></div>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Quotation', 'العرض') }}</th><th>{{ L('Date', 'التاريخ') }}</th><th>{{ L('Status', 'الحالة') }}</th><th>{{ L('Language', 'اللغة') }}</th><th></th></tr></thead><tbody>
+{% for q in quotes %}<tr><td class="first"><a href="{{ url_for('quotation_view', qid=q.id) }}"><bdi dir="ltr">{{ q.number }} Rev {{ q.revision }}</bdi></a></td><td data-l="{{ L('Date', 'التاريخ') }}" class="num">{{ d(q.quote_date) }}</td><td data-l="{{ L('Status', 'الحالة') }}">{{ badge(QUOTE, q.status) }}</td><td data-l="{{ L('Language', 'اللغة') }}">{{ 'عربي' if q.language == 'ar' else 'English' }}</td><td><a href="{{ url_for('quotation_pdf', qid=q.id) }}" target="_blank">PDF</a></td></tr>
+{% else %}<tr><td colspan="5" class="empty">{{ L('No quotations yet.', 'ما في عروض لسا.') }}</td></tr>{% endfor %}</tbody></table></div>
+{% include '_direct.html' %}
+{% elif tab == 'payments' %}
+{% include '_tab_payments.html' %}
+{% elif tab == 'archive' %}
+{% include '_tab_archive.html' %}
+{% elif tab == 'activity' %}
+<h2>{{ L('Activity', 'السجل') }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('When', 'الوقت') }}</th><th>{{ L('Action', 'الإجراء') }}</th><th>{{ L('Detail', 'التفاصيل') }}</th><th>{{ L('By', 'بواسطة') }}</th></tr></thead><tbody>
+{% for a in acts %}<tr><td class="first num small">{{ dt(a.at) }}</td><td data-l="{{ L('Action', 'الإجراء') }}"><code>{{ a.action }}</code></td><td data-l="{{ L('Detail', 'التفاصيل') }}" dir="auto">{{ a.detail }}{% if a.before or a.after %}<details class="small"><summary>{{ L('before / after', 'قبل / بعد') }}</summary><code dir="ltr">{{ a.before }}</code><br><code dir="ltr">{{ a.after }}</code></details>{% endif %}</td><td data-l="{{ L('By', 'بواسطة') }}" class="small">{{ a.actor or '' }}</td></tr>
+{% else %}<tr><td colspan="4" class="empty">—</td></tr>{% endfor %}</tbody></table></div>
+{% endif %}
+{% endblock %}

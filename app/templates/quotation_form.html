@@ -1,0 +1,36 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf with context %}
+{% block body %}
+<h1>{% if q %}{{ L('Edit draft', 'تعديل مسودة') }} <bdi dir="ltr">{{ q.number }} Rev {{ q.revision }}</bdi>{% else %}{{ L('New quotation', 'عرض سعر جديد') }}{% endif %}</h1>
+<p class="muted">{{ client.name }}{% if project %} · <a href="{{ url_for('project_view', pid=project.id) }}">{{ project.name }}</a> <bdi dir="ltr">{{ project.number }}</bdi>{% endif %}</p>
+{% for e in errors %}<div class="flash error" role="alert">{{ e }}</div>{% endfor %}
+<form method="post" action="{{ url_for('quotation_edit', qid=q.id) if q else url_for('quotation_new') }}" novalidate>{{ csrf() }}
+{% if not q %}{% if project %}<input type="hidden" name="project_id" value="{{ project.id }}">{% else %}<input type="hidden" name="client_id" value="{{ client.id }}">{% endif %}{% else %}<input type="hidden" name="version" value="{{ q.version }}">{% endif %}
+<div class="card">
+  <div class="row">
+    <div class="field"><label for="ql">{{ L('PDF language', 'لغة العرض') }}</label><select id="ql" name="language"><option value="ar" {{ 'selected' if lang_q == 'ar' }}>عربي</option><option value="en" {{ 'selected' if lang_q == 'en' }}>English</option></select>
+    {% if not q %}<div class="hint"><a href="{{ url_for('quotation_new', project_id=project.id if project else none, client_id=client.id, language='en' if lang_q == 'ar' else 'ar') }}">{{ L('Reload the default wording in the other language', 'حمّل الصيغة الافتراضية باللغة التانية') }}</a></div>{% endif %}</div>
+    <div class="field"><label for="qd">{{ L('Date', 'التاريخ') }}</label><input id="qd" type="date" name="quote_date" value="{{ today }}"></div>
+    <div class="field"><label for="qv">{{ L('Validity (days)', 'الصلاحية (أيام)') }}</label><input id="qv" name="validity_days" inputmode="numeric" value="{{ v.validity_days if v.validity_days is not none }}"></div>
+    <div class="field"><label for="qdp">{{ L('Delivery period', 'مدة التسليم') }}</label><input id="qdp" name="delivery_period" dir="auto" value="{{ v.delivery_period or '' }}" placeholder="{{ L('e.g. 7 working days from receiving full drawings', 'مثلاً ٧ أيام عمل من استلام المخططات كاملة') }}"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label for="qloc">{{ L('Location', 'الموقع') }}</label><input id="qloc" name="location_text" dir="auto" value="{{ v.location_text or '' }}"></div>
+    <div class="field"><label for="qb">{{ L('Building description', 'وصف المبنى') }}</label><input id="qb" name="building_description" dir="auto" value="{{ v.building_description or '' }}"></div>
+  </div>
+</div>
+<div class="card">
+  <h3>{{ L('Services and fees (KWD)', 'الخدمات والأتعاب (د.ك)') }}</h3>
+  <div class="tbl-wrap"><table class="edit"><thead><tr><th>{{ L('Service description', 'وصف الخدمة') }}</th><th>{{ L('Scope', 'البند') }}</th><th>{{ L('Amount (KWD)', 'المبلغ (د.ك)') }}</th></tr></thead><tbody id="items">
+  {% for it in v['items'] %}<tr><td><input name="item_desc" value="{{ it.description }}" dir="auto" style="min-width:260px"></td><td><select name="item_scope"><option value="">—</option>{% for s in SCOPES %}<option value="{{ s }}" {{ 'selected' if it.scope == s }}>{{ scope_label(s) }}</option>{% endfor %}</select></td><td><input class="w-m" name="item_amount" value="{{ kwd(it.amount_fils, '') if it.amount_fils else '' }}" inputmode="decimal" dir="ltr" placeholder="0.000"></td></tr>{% endfor %}
+  {% for _ in range(2) %}<tr><td><input name="item_desc" dir="auto" style="min-width:260px"></td><td><select name="item_scope"><option value="">—</option>{% for s in SCOPES %}<option value="{{ s }}">{{ scope_label(s) }}</option>{% endfor %}</select></td><td><input class="w-m" name="item_amount" inputmode="decimal" dir="ltr" placeholder="0.000"></td></tr>{% endfor %}
+  </tbody></table></div>
+  <div class="row" style="margin-top:8px"><div class="field" style="flex:0 1 220px"><label for="qdisc">{{ L('Discount (KWD)', 'الخصم (د.ك)') }}</label><input id="qdisc" name="discount" inputmode="decimal" dir="ltr" value="{{ kwd(v.discount_fils, '') if v.discount_fils else '' }}"></div></div>
+</div>
+<div class="card">
+  <div class="field"><label for="qpt">{{ L('Payment terms', 'شروط الدفع') }}</label><textarea id="qpt" name="payment_terms" dir="auto">{{ v.payment_terms or '' }}</textarea></div>
+  <div class="field"><label for="qex">{{ L('Exclusions', 'الاستثناءات') }}</label><textarea id="qex" name="exclusions" dir="auto">{{ v.exclusions or '' }}</textarea></div>
+  <div class="field"><label for="qn">{{ L('Notes', 'ملاحظات') }}</label><textarea id="qn" name="notes" dir="auto">{{ v.notes or '' }}</textarea></div>
+</div>
+<div class="sticky-save"><button class="btn primary">{{ L('Save draft', 'احفظ المسودة') }}</button></div>
+</form>
+{% endblock %}

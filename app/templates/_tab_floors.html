@@ -1,0 +1,89 @@
+{% from '_m.html' import csrf, badge, money as kd with context %}
+<div class="head-actions" style="margin-bottom:10px">
+  <a class="btn" href="{{ url_for('export_xlsx', pid=p.id) }}">{{ L('Excel: intake + floor table + BOQ worksheet', 'إكسل: بيانات المشروع + جدول الأدوار + جدول الكميات') }}</a>
+  <a class="btn primary" href="{{ url_for('export_revit', pid=p.id) }}">{{ L('Export to Revit 2022', 'تصدير إلى ريفت 2022') }}</a>
+</div>
+
+{% if rules %}
+<div class="card"><h3>{{ L('Archive rules for this BOQ', 'قواعد الأرشيف لهالجدول') }} ({{ rules|length }})</h3>
+{% for r in rules %}<div class="rule"><div dir="auto">{{ r.text }}</div><div class="small muted">#{{ r.id }} rev {{ r.current_revision }} · {{ r.why[1] if lang == 'ar' else r.why[0] }}</div></div>{% endfor %}
+</div>{% endif %}
+
+<div class="card">
+  <h3>{{ L('Generate floor table', 'توليد جدول الأدوار') }}</h3>
+  <p class="small muted">{{ L('How floors are counted', 'طريقة عد الأدوار') }}: <strong>{{ explanation }}</strong></p>
+  <form method="post" action="{{ url_for('floors_generate', pid=p.id) }}" class="row">{{ csrf() }}
+    <div class="field"><label for="g_b">{{ L('Basements', 'سراديب') }}</label><input id="g_b" name="basement_count" inputmode="numeric" value="{{ p.basement_count if p.basement_count is not none }}"></div>
+    <div class="field"><label for="g_u">{{ L('Upper floors', 'أدوار علوية') }}</label><input id="g_u" name="upper_floor_count" inputmode="numeric" value="{{ p.upper_floor_count if p.upper_floor_count is not none }}"></div>
+    <div class="field"><label for="g_r">{{ L('Roof', 'السطح') }}</label><select id="g_r" name="has_roof"><option value="1" {{ 'selected' if p.has_roof != 0 }}>{{ L('Yes', 'نعم') }}</option><option value="0" {{ 'selected' if p.has_roof == 0 }}>{{ L('No', 'لا') }}</option></select></div>
+    <div class="field"><label for="g_rs">{{ L('Roof structures', 'ملحق السطح') }}</label><input id="g_rs" name="roof_structures" value="{{ p.roof_structures or '' }}" placeholder="{{ L('blank = none', 'فاضي = ما في') }}"></div>
+    <div class="field"><label for="g_gf">{{ L('GF FFL (m)', 'منسوب الأرضي (م)') }}</label><input id="g_gf" name="gf_ffl_mm" inputmode="decimal" value="{{ m(p.gf_ffl_mm, signed=true) }}" placeholder="+0.600"></div>
+    <div class="field"><label for="g_t">{{ L('Typical floor-to-floor (m)', 'ارتفاع الدور (م)') }}</label><input id="g_t" name="typical_ftf_mm" inputmode="decimal" value="{{ m(p.typical_ftf_mm) }}" placeholder="4.000"></div>
+    {% if levels %}<div class="field" style="flex:0 0 auto"><label class="checks"><input type="checkbox" name="replace" value="1"> {{ L('Replace the existing table', 'استبدل الجدول الحالي') }}</label></div>{% endif %}
+    <div class="field" style="flex:0 0 auto"><button class="btn">{{ L('Generate', 'ولّد') }}</button></div>
+  </form>
+</div>
+
+{% if preview %}
+<div class="card" role="status">
+  <h3>{{ L('Preview - not saved yet', 'معاينة - لسا ما انحفظ') }}</h3>
+  {% for e in preview.errors %}<div class="flash error">{{ e }}</div>{% endfor %}
+  {% for w in preview.warnings %}<div class="warn">{{ w }}</div>{% endfor %}
+  {% if preview.moves %}<p>{{ L('These levels will move:', 'هالأدوار رح تتحرك:') }}</p><ul>{% for mv in preview.moves %}<li><strong>{{ mv.name }}</strong>: <bdi dir="ltr">{{ m(mv.before, signed=true) or '(blank)' }}</bdi> → <bdi dir="ltr">{{ m(mv.after, signed=true) or '(blank)' }}</bdi></li>{% endfor %}</ul>
+  {% else %}<p class="muted">{{ L('No level elevations change.', 'ما في منسوب بيتغير.') }}</p>{% endif %}
+  <p class="small">{{ L('Fixed levels keep their FFL. Press Save to keep these changes.', 'الأدوار المثبتة بتحافظ على منسوبها. اضغط حفظ لتثبيت التعديلات.') }}</p>
+</div>
+{% endif %}
+
+<form method="post" action="{{ url_for('floors_save', pid=p.id) }}" data-multi>{{ csrf() }}
+<div class="spread"><h3>{{ L('Floor table', 'جدول الأدوار') }}</h3><span class="small muted">{{ L('Units: m (FFL, heights, offsets), mm (slab, finish), m² (area). Blank ≠ 0.', 'الوحدات: متر للمناسيب والارتفاعات، مم للبلاطة والتشطيب، م² للمساحة. الفاضي مو صفر.') }}</span></div>
+<div class="tbl-wrap"><table class="edit">
+<thead><tr><th>{{ L('Level', 'الدور') }}</th><th>{{ L('Type', 'النوع') }}</th><th>FFL (m)</th><th title="{{ L('Fixed elevation: never moved by recalculation', 'منسوب مثبت: ما بيتحرك') }}">{{ L('Fixed', 'مثبت') }}</th><th>{{ L('Floor-to-floor (m)', 'الارتفاع للدور التالي (م)') }}</th><th>{{ L('Area (m²)', 'المساحة (م²)') }}</th><th>{{ L('Typical group', 'مجموعة نموذجية') }}</th><th>{{ L('Confirmed', 'مؤكد') }}</th><th>{{ L('Slab-top offset (m)', 'إزاحة سطح البلاطة (م)') }}</th><th>SSL (m)</th><th>{{ L('Clear height (m)', 'الارتفاع الصافي (م)') }}</th><th>{{ L('Slab (mm)', 'البلاطة (مم)') }}</th><th>{{ L('Finish (mm)', 'التشطيب (مم)') }}</th><th>{{ L('Drawing ref', 'مرجع المخطط') }}</th><th>{{ L('Notes', 'ملاحظات') }}</th><th></th></tr></thead>
+<tbody>
+{% set moved = (preview.moves|map(attribute='name')|list) if preview else [] %}
+{% for l in levels|reverse %}{% set i = levels|length - loop.index %}
+<tr class="{{ 'moved' if l.name in moved }}">
+  <td><input type="hidden" name="uid" value="{{ l.uid }}"><input class="w-l" name="name" value="{{ l.name }}" aria-label="{{ L('Level name', 'اسم الدور') }}" dir="auto"></td>
+  <td><select name="kind" aria-label="{{ L('Type', 'النوع') }}">{% for k in ['basement','ground','upper','roof','roof_structure','other'] %}<option {{ 'selected' if l.kind == k }}>{{ k }}</option>{% endfor %}</select></td>
+  <td><input class="w-s" name="ffl_mm" value="{{ m(l.ffl_mm, signed=true) }}" inputmode="decimal" dir="ltr" aria-label="FFL" title="{{ L('Calculated from the heights unless Fixed is ticked', 'محسوب من الارتفاعات إلا إذا علّمت مثبت') }}"></td>
+  <td style="text-align:center"><input type="checkbox" name="fixed" value="{{ l.uid }}" {{ 'checked' if l.fixed }} aria-label="{{ L('Fixed', 'مثبت') }}"></td>
+  <td><input class="w-s" name="ftf_mm" value="{{ m(l.ftf_mm) }}" inputmode="decimal" dir="ltr"></td>
+  <td><input class="w-s" name="area_m2" value="{{ l.area_m2 if l.area_m2 is not none }}" inputmode="decimal" dir="ltr"></td>
+  <td><input class="w-s" name="typical_group" value="{{ l.typical_group or '' }}"></td>
+  <td style="text-align:center"><input type="checkbox" name="confirmed" value="{{ l.uid }}" {{ 'checked' if l.confirmed }} aria-label="{{ L('Confirmed from drawings', 'مؤكد من المخططات') }}"></td>
+  <td><input class="w-s" name="slab_offset_mm" value="{{ m(l.slab_offset_mm, signed=true) }}" inputmode="decimal" dir="ltr" placeholder="-0.100"></td>
+  <td class="num small"><bdi dir="ltr">{{ m(l.ffl_mm + l.slab_offset_mm, signed=true) if l.ffl_mm is not none and l.slab_offset_mm is not none else '' }}</bdi></td>
+  <td><input class="w-s" name="clear_height_mm" value="{{ m(l.clear_height_mm) }}" inputmode="decimal" dir="ltr"></td>
+  <td><input class="w-s" name="slab_thk_mm" value="{{ l.slab_thk_mm if l.slab_thk_mm is not none }}" inputmode="numeric" dir="ltr"></td>
+  <td><input class="w-s" name="finish_mm" value="{{ l.finish_mm if l.finish_mm is not none }}" inputmode="numeric" dir="ltr"></td>
+  <td><input class="w-m" name="drawing_ref" value="{{ l.drawing_ref or '' }}"></td>
+  <td><input class="w-m" name="notes" value="{{ l.notes or '' }}" dir="auto"></td>
+  <td style="white-space:nowrap"><button class="btn sm" name="action" value="dup:{{ i }}" title="{{ L('Duplicate as a new named floor above', 'كرر كدور جديد فوق') }}">⧉</button> <button class="btn sm danger" name="action" value="del:{{ i }}" title="{{ L('Remove', 'احذف') }}">✕</button></td>
+</tr>
+{% else %}<tr><td colspan="16" class="empty">{{ L('No floor table yet. Enter basements and floors above and press Generate.', 'ما في جدول أدوار لسا. دخّل عدد السراديب والأدوار فوق واضغط ولّد.') }}</td></tr>{% endfor %}
+</tbody>
+<tfoot><tr><td colspan="5"><strong>{{ L('Total built-up area', 'إجمالي مساحة البناء') }}</strong> <span class="small muted">{{ L('(each physical floor counted once)', '(كل دور محسوب مرة وحدة)') }}</span></td><td class="num"><strong>{{ '%.2f'|format(total_area) if total_area is not none else '—' }}</strong></td><td colspan="10"></td></tr></tfoot>
+</table></div>
+<div class="sticky-save">
+  <button class="btn" name="action" value="preview">{{ L('Preview recalculation', 'معاينة إعادة الحساب') }}</button>
+  <button class="btn primary" name="action" value="save">{{ L('Save floor table', 'احفظ جدول الأدوار') }}</button>
+  <button class="btn" name="action" value="add">+ {{ L('Add level', 'أضف دور') }}</button>
+</div>
+</form>
+
+<form method="post" action="{{ url_for('grids_save', pid=p.id) }}">{{ csrf() }}
+<h3>{{ L('Straight grids for Revit (optional)', 'محاور مستقيمة لريفت (اختياري)') }}</h3>
+<p class="small muted">{{ L('Metres in plan from the Revit internal origin (0,0): +X = east, +Y = north. Only grids with all four coordinates are exported.', 'بالمتر من نقطة الأصل الداخلية لريفت (0,0): +X شرق، +Y شمال. بس المحاور اللي إلها الإحداثيات الأربعة بتنصدّر.') }}</p>
+<div class="tbl-wrap"><table class="edit"><thead><tr><th>{{ L('Grid', 'المحور') }}</th><th>{{ L('Start X (m)', 'بداية X (م)') }}</th><th>{{ L('Start Y (m)', 'بداية Y (م)') }}</th><th>{{ L('End X (m)', 'نهاية X (م)') }}</th><th>{{ L('End Y (m)', 'نهاية Y (م)') }}</th><th>{{ L('Notes', 'ملاحظات') }}</th></tr></thead><tbody>
+{% for g in grids %}<tr><td><input type="hidden" name="uid" value="{{ g.uid }}"><input class="w-s" name="name" value="{{ g.name }}"></td>{% for f in ['x1','y1','x2','y2'] %}<td><input class="w-s" name="{{ f }}" value="{{ m(g[f ~ '_mm'], signed=false) }}" inputmode="decimal" dir="ltr"></td>{% endfor %}<td><input name="notes" value="{{ g.notes or '' }}"></td></tr>{% endfor %}
+{% for _ in range(4) %}<tr><td><input type="hidden" name="uid" value="new"><input class="w-s" name="name" placeholder="{{ L('e.g. A', 'مثلاً A') }}"></td>{% for f in ['x1','y1','x2','y2'] %}<td><input class="w-s" name="{{ f }}" inputmode="decimal" dir="ltr"></td>{% endfor %}<td><input name="notes"></td></tr>{% endfor %}
+</tbody></table></div>
+<p class="hint">{{ L('Clear a grid name to remove it.', 'امسح اسم المحور لتحذفه.') }}</p>
+<button class="btn">{{ L('Save grids', 'احفظ المحاور') }}</button>
+</form>
+
+<h3>{{ L('What can be prepared now', 'شو فينا نجهّز هلق') }}</h3>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Trade', 'البند') }}</th><th>{{ L('Drawings', 'المخططات') }}</th><th>{{ L('Can prepare now', 'ممكن نجهّز') }}</th><th>{{ L('Still needed', 'لسا ناقص') }}</th></tr></thead><tbody>
+{% for t in ready_info %}<tr><td class="first"><strong>{{ scope_label(t.trade) }}</strong></td><td data-l="{{ L('Drawings', 'المخططات') }}">{% if t.received %}{{ t.received|join(', ') }}{% else %}<span class="b b-waiting">{{ L('None received', 'ما وصل شي') }}</span>{% endif %}</td><td data-l="{{ L('Can prepare now', 'ممكن نجهّز') }}" class="small">{{ t.can_prepare }}</td><td data-l="{{ L('Still needed', 'لسا ناقص') }}" class="small">{% if t.status == 'drawings_needed' %}{{ t.needs|join('; ') }}{% else %}—{% endif %}</td></tr>
+{% else %}<tr><td colspan="4" class="empty">{{ L('Select the BOQ scope in Overview.', 'اختار نطاق الجدول من نظرة عامة.') }}</td></tr>{% endfor %}</tbody></table></div>
+{% if missing %}<h3>{{ L('Missing information list', 'قائمة المعلومات الناقصة') }}</h3><ul class="small">{% for it in missing %}<li><strong>{{ it.category }}</strong>: {{ it.item }}</li>{% endfor %}</ul>{% endif %}

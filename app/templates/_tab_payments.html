@@ -1,0 +1,35 @@
+{% from '_m.html' import csrf, badge, money as kd with context %}
+<div class="card">
+  <div class="money-box">
+    <div><div class="small muted">{{ L('Agreed fee', 'الأتعاب المتفق عليها') }}</div><div class="v">{% if money.fee is none %}<span class="b b-pending_agreement">{{ label(MONEY, 'pending_agreement') }}</span>{% else %}{{ kd(money.fee) }}{% endif %}</div></div>
+    <div><div class="small muted">{{ L('Amount received', 'المبلغ المستلم') }}</div><div class="v">{{ kd(money.received) }}</div></div>
+    <div><div class="small muted">{{ L('Outstanding balance', 'المبلغ المتبقي') if (money.balance or 0) >= 0 else L('Client credit (overpaid)', 'رصيد دائن للعميل (دفع زيادة)') }}</div><div class="v">{% if money.balance is none %}—{% else %}{{ kd(money.balance|abs) }}{% endif %}</div></div>
+  </div>
+  <p class="small muted">{{ L('Balance = agreed fee − payments received. Amounts in KWD.', 'المتبقي = الأتعاب المتفق عليها − المستلم. المبالغ بالدينار الكويتي.') }}{% if p.fee_basis_note %} {{ L('Fee basis', 'أساس الأتعاب') }}: {{ p.fee_basis_note }}{% endif %}</p>
+</div>
+
+<h2>{{ L('Payments received', 'الدفعات المستلمة') }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Date received', 'تاريخ الاستلام') }}</th><th class="r">{{ L('Amount', 'المبلغ') }}</th><th>{{ L('Method', 'الطريقة') }}</th><th>{{ L('Reference', 'المرجع') }}</th><th>{{ L('Notes', 'ملاحظات') }}</th><th></th></tr></thead><tbody>
+{% for a in allocs %}<tr><td class="first num">{{ d(a.date_received) }} <span class="small muted">R-{{ '%05d'|format(a.id) }}</span></td><td data-l="{{ L('Amount', 'المبلغ') }}" class="r"><strong>{{ kd(a.alloc) }}</strong>{% if a.amount_fils != a.alloc %} <span class="small muted">{{ L('of', 'من') }} {{ kd(a.amount_fils) }}</span>{% endif %}</td><td data-l="{{ L('Method', 'الطريقة') }}">{{ a.method or '' }}</td><td data-l="{{ L('Reference', 'المرجع') }}">{{ a.reference or '' }}</td><td data-l="{{ L('Notes', 'ملاحظات') }}">{{ a.notes or '' }}</td>
+<td style="white-space:nowrap"><a class="btn sm" href="{{ url_for('payment_receipt', pay_id=a.id) }}" target="_blank">{{ L('Receipt', 'سند') }}</a>
+{% if a.amount_fils > 0 %}<form method="post" action="{{ url_for('payment_reverse', pay_id=a.id) }}" style="display:inline" onsubmit="return confirm('{{ L('Reverse this payment? The original stays in the history.', 'إلغاء هالدفعة؟ الأصل بيضل بالسجل.') }}')">{{ csrf() }}<input type="hidden" name="back" value="{{ url_for('project_view', pid=p.id, tab='payments') }}"><input type="hidden" name="reason" value="correction"><button class="btn sm danger">{{ L('Reverse', 'إلغاء') }}</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="empty">{{ L('No payments yet.', 'ما في دفعات لسا.') }}</td></tr>{% endfor %}</tbody></table></div>
+
+<div class="card" id="pay" style="margin-top:12px">
+<h3>{{ L('Record payment', 'تسجيل دفعة') }}</h3>
+<form method="post" action="{{ url_for('payment_add', pid=p.id) }}">{{ csrf() }}<input type="hidden" name="request_key" value="{{ new_key }}">
+  <div class="row">
+    <div class="field"><label for="pa">{{ L('Amount received (KWD)', 'المبلغ المستلم (د.ك)') }}</label><input id="pa" name="amount" inputmode="decimal" placeholder="0.000" required dir="ltr"></div>
+    <div class="field"><label for="pd">{{ L('Date received', 'تاريخ الاستلام') }}</label><input id="pd" type="date" name="date_received" value="{{ today }}" required></div>
+    <div class="field"><label for="pk">{{ L('Type', 'النوع') }}</label><select id="pk" name="kind"><option value="deposit">{{ L('Deposit', 'عربون') }}</option><option value="instalment" selected>{{ L('Instalment', 'دفعة') }}</option><option value="final">{{ L('Final payment', 'دفعة أخيرة') }}</option></select></div>
+  </div>
+  <div class="row">
+    <div class="field"><label for="pm">{{ L('Method', 'الطريقة') }}</label><select id="pm" name="method"><option>Bank transfer</option><option>K-Net / link</option><option>Cash</option><option>Cheque</option><option>WAMD</option></select></div>
+    <div class="field"><label for="pr">{{ L('Reference', 'المرجع') }}</label><input id="pr" name="reference"></div>
+    <div class="field"><label for="pp">{{ L('Payer (if not the client)', 'الدافع (إذا مو العميل)') }}</label><input id="pp" name="payer"></div>
+  </div>
+  <div class="field"><label for="pn">{{ L('Notes', 'ملاحظات') }}</label><input id="pn" name="notes"></div>
+  <button class="btn primary">{{ L('Record payment', 'سجّل الدفعة') }}</button>
+  <p class="hint">{{ L('One payment covering several projects? Record it from the client page to split it.', 'دفعة وحدة لأكتر من مشروع؟ سجلها من صفحة العميل لتوزعها.') }}</p>
+</form></div>
+{% include '_direct.html' %}

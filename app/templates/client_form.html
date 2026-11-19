@@ -1,0 +1,14 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf, field with context %}
+{% block body %}
+<h1>{{ L('Edit client', 'تعديل عميل') if c else L('New client', 'عميل جديد') }}</h1>
+<form method="post" class="card" novalidate>{{ csrf() }}
+  {{ field('name', 'Client or company name', 'اسم العميل أو الشركة', form.get('name'), errors=errors, attrs='required dir="auto" autofocus') }}
+  <div class="row">{{ field('contact_person', 'Contact person', 'الشخص المسؤول', form.get('contact_person'), errors=errors, attrs='dir="auto"') }}
+  {{ field('phone', 'Phone', 'الهاتف', form.get('phone'), type='tel', errors=errors, attrs='inputmode="tel" dir="ltr"') }}
+  {{ field('whatsapp', 'WhatsApp', 'واتساب', form.get('whatsapp'), type='tel', errors=errors, attrs='inputmode="tel" dir="ltr"') }}</div>
+  <div class="row">{{ field('email', 'Email', 'الإيميل', form.get('email'), type='email', errors=errors, attrs='dir="ltr"') }}
+  <div class="field"><label for="f_lang">{{ L('Preferred language', 'اللغة المفضلة') }}</label><select id="f_lang" name="language"><option value="ar" {{ 'selected' if form.get('language') != 'en' }}>عربي</option><option value="en" {{ 'selected' if form.get('language') == 'en' }}>English</option></select></div></div>
+  {{ field('notes', 'Notes', 'ملاحظات', form.get('notes'), type='textarea', errors=errors) }}
+  <button class="btn primary">{{ L('Save', 'احفظ') }}</button>
+</form>
+{% endblock %}

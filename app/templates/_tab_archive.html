@@ -1,0 +1,27 @@
+{% from '_m.html' import csrf with context %}
+<h2>{{ L('Rules applied to this project', 'القواعد المطبقة على هالمشروع') }}</h2>
+{% for r in rules %}<div class="rule"><div dir="auto">{{ r.text }}</div><div class="small muted"><a href="{{ url_for('archive_rule', rid=r.id) }}">#{{ r.id }} rev {{ r.current_revision }}</a> · {{ r.why[1] if lang == 'ar' else r.why[0] }}</div></div>
+{% else %}<p class="muted">{{ L('No approved rules apply yet.', 'ما في قواعد معتمدة بتنطبق لسا.') }}</p>{% endfor %}
+
+{% if drafts %}<h3>{{ L('Drafts waiting for your confirmation (not applied)', 'مسودات بانتظار تأكيدك (مو مطبقة)') }}</h3>
+{% for r in drafts %}<div class="rule" style="border-color:#c98a00"><div dir="auto">{{ r.text }}</div><div class="small"><a href="{{ url_for('archive_rule', rid=r.id) }}">#{{ r.id }} · {{ L('Confirm scope', 'أكّد النطاق') }}</a></div></div>{% endfor %}{% endif %}
+<div class="card" style="margin-top:12px">
+<h3>{{ L('Save an instruction or decision', 'احفظ تعليمة أو قرار') }}</h3>
+<form method="post" action="{{ url_for('archive_page') }}">{{ csrf() }}
+  <input type="hidden" name="project_id" value="{{ p.id }}"><input type="hidden" name="request_key" value="{{ new_key }}">
+  <input type="hidden" name="back" value="{{ url_for('project_view', pid=p.id, tab='archive') }}">
+  <div class="field"><label for="ar_t">{{ L('In your own words (Arabic or English)', 'بكلماتك (عربي أو إنجليزي)') }}</label><textarea id="ar_t" name="text" dir="auto" required placeholder="{{ L('e.g. Use 12 m stock cutting, record actual waste - اعتمد هالطريقة لكل المشاريع', 'مثلاً: حساب القص على ١٢ متر وتسجيل الهالك الفعلي - اعتمد هالطريقة لكل المشاريع') }}"></textarea></div>
+  <div class="row">
+    <div class="field"><label for="ar_s">{{ L('Applies to', 'بتنطبق على') }}</label><select id="ar_s" name="scope">
+      <option value="auto">{{ L('Detect from my wording', 'افهمها من كلامي') }}</option>
+      <option value="company">{{ L('All projects (company rule)', 'كل المشاريع (قاعدة عامة)') }}</option>
+      <option value="client">{{ L('This client', 'هالعميل') }}: {{ client.name }}</option>
+      <option value="project">{{ L('This project only', 'لهالمشروع بس') }}</option></select></div>
+    <div class="field"><label for="ar_k">{{ L('Kind', 'النوع') }}</label><select id="ar_k" name="kind"><option value="instruction">{{ L('Instruction / method', 'تعليمة / طريقة') }}</option><option value="decision">{{ L('Project decision', 'قرار مشروع') }}</option></select></div>
+    <div class="field"><label for="ar_tp">{{ L('Topic', 'الموضوع') }}</label><select id="ar_tp" name="topic"><option value="">—</option>{% for k in ['concrete','rebar','blockwork','finishes','measurement','revit','client_excel','quotations','delivery','other'] %}<option value="{{ k }}">{{ k }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="ar_tr">{{ L('Only when this trade is in scope', 'بس إذا هالبند ضمن النطاق') }}</label><select id="ar_tr" name="trade"><option value="">—</option>{% for s in SCOPES %}<option value="{{ s }}">{{ scope_label(s) }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="field"><label for="ar_src">{{ L('Source (drawing, sheet, revision, message)', 'المصدر (مخطط، لوحة، مراجعة، رسالة)') }}</label><input id="ar_src" name="source_ref"></div>
+  <button class="btn primary">{{ L('Save to Archive', 'احفظ بالأرشيف') }}</button>
+  <p class="hint">{{ L('«اعتمد هالطريقة لكل المشاريع» saves a company rule, «لهالمشروع بس» keeps it on this job. Unclear wording is saved as a draft until you confirm it.', '«اعتمد هالطريقة لكل المشاريع» بتنحفظ قاعدة عامة، و«لهالمشروع بس» بتضل على هالمشروع. الكلام غير الواضح بينحفظ مسودة لحتى تأكده.') }}</p>
+</form></div>

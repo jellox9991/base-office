@@ -1,0 +1,15 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf with context %}
+{% block body %}
+<h1>{{ L('BASE Settings', 'إعدادات بيس') }}</h1>
+<form method="post" enctype="multipart/form-data" class="card">{{ csrf() }}
+  {% set labels = {'company_name': L('Company name', 'اسم الشركة'), 'company_name_ar': L('Company name (Arabic)', 'اسم الشركة (عربي)'), 'company_email': L('Company email', 'إيميل الشركة'), 'company_phone': L('Company phone / WhatsApp', 'هاتف الشركة / واتساب'), 'company_address': L('Address', 'العنوان'), 'quotation_footer': L('Quotation footer (English)', 'تذييل العرض (إنجليزي)'), 'quotation_footer_ar': L('Quotation footer (Arabic)', 'تذييل العرض (عربي)'), 'number_prefix': L('Project number prefix (BASE → BASE-2026-001)', 'بادئة رقم المشروع'), 'quote_prefix': L('Quotation number prefix', 'بادئة رقم العرض'), 'default_validity_days': L('Default quotation validity (days)', 'صلاحية العرض الافتراضية (أيام)'), 'default_payment_terms': L('Default payment terms (English)', 'شروط الدفع الافتراضية (إنجليزي)'), 'default_payment_terms_ar': L('Default payment terms (Arabic)', 'شروط الدفع الافتراضية (عربي)')} %}
+  <div class="row">{% for k in fields %}<div class="field" style="flex:1 1 300px"><label for="s_{{ k }}">{{ labels[k] }}</label><input id="s_{{ k }}" name="{{ k }}" value="{{ s.get(k) or '' }}" dir="auto"></div>{% endfor %}</div>
+  <div class="field"><label for="s_logo">{{ L('Logo (PNG/JPG, used on PDFs)', 'اللوغو (PNG/JPG للـ PDF)') }}</label>{% if s.logo_stored_name %}<img src="{{ url_for('settings_logo') }}" alt="logo" style="height:48px;display:block;margin-bottom:6px">{% endif %}<input id="s_logo" type="file" name="logo" accept=".png,.jpg,.jpeg"></div>
+  <div class="field"><label for="s_pre">{{ L('Scope presets (one per line: name: items)', 'نطاقات جاهزة (كل سطر: الاسم: البنود)') }}</label><textarea id="s_pre" name="scope_presets_text" rows="5" dir="auto">{{ presets_text }}</textarea><div class="hint">{{ L('Items:', 'البنود:') }} {{ SCOPES|join(', ') }}</div></div>
+  <button class="btn primary">{{ L('Save settings', 'احفظ الإعدادات') }}</button>
+</form>
+<form method="post" class="card">{{ csrf() }}<input type="hidden" name="action" value="password"><h3>{{ L('Change password', 'تغيير كلمة السر') }}</h3>
+  <div class="row"><div class="field"><label for="op">{{ L('Current password', 'كلمة السر الحالية') }}</label><input id="op" type="password" name="old_password" autocomplete="current-password"></div><div class="field"><label for="np">{{ L('New password', 'كلمة السر الجديدة') }}</label><input id="np" type="password" name="new_password" autocomplete="new-password"></div></div>
+  <button class="btn">{{ L('Change password', 'غيّر كلمة السر') }}</button></form>
+<div class="card small muted">{{ L('Data folder', 'مجلد البيانات') }}: <code dir="ltr">{{ config.DATA_DIR }}</code> · {{ L('Back it up (database + files) to OneDrive or a USB drive regularly.', 'خذ نسخة احتياطية منه (القاعدة والملفات) على OneDrive أو فلاشة بشكل دوري.') }}</div>
+{% endblock %}

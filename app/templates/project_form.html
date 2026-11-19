@@ -1,0 +1,26 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf, field with context %}
+{% block body %}
+<h1>{{ L('New project', 'مشروع جديد') }}</h1>
+<form method="post" novalidate>{{ csrf() }}
+<input type="hidden" name="request_key" value="{{ request_key }}">
+<div class="card">
+  <div class="row">
+    <div class="field{{ ' has-err' if errors.client_id }}"><label for="f_client">{{ L('Client', 'العميل') }}</label>
+      <select id="f_client" name="client_id" {% if errors.client_id %}autofocus aria-invalid="true"{% endif %}><option value="">{{ L('+ New client (type below)', '+ عميل جديد (اكتب تحت)') }}</option>
+      {% for c in clients %}<option value="{{ c.id }}" {{ 'selected' if form.get('client_id')|string == c.id|string }}>{{ c.name }}</option>{% endfor %}</select>
+      {% if errors.client_id %}<div class="err">{{ errors.client_id }}</div>{% endif %}</div>
+    {{ field('new_client_name', 'New client or company name', 'اسم العميل أو الشركة الجديدة', form.get('new_client_name'), errors=errors) }}
+  </div>
+  <div class="row" id="newclient">
+    {{ field('new_contact', 'Contact person', 'الشخص المسؤول', form.get('new_contact'), errors=errors) }}
+    {{ field('new_phone', 'Phone / WhatsApp', 'الهاتف / واتساب', form.get('new_phone'), type='tel', errors=errors, attrs='inputmode="tel"') }}
+    {{ field('new_email', 'Client email', 'إيميل العميل', form.get('new_email'), type='email', errors=errors) }}
+  </div>
+  {{ field('name', 'Project name (Arabic or English)', 'اسم المشروع (عربي أو إنجليزي)', form.get('name'), errors=errors, attrs='required dir="auto"' + (' autofocus' if not errors else '')) }}
+  <p class="hint">{{ L('Client and project name are enough to save. The project number (e.g. BASE-2026-001) is generated automatically.', 'العميل واسم المشروع بيكفوا للحفظ. رقم المشروع بيطلع تلقائياً.') }}</p>
+</div>
+{% set v = form %}{% set open_all = errors and errors|length > 0 %}{% set show_fee = true %}
+{% include '_project_fields.html' %}
+<div class="sticky-save"><button class="btn primary">{{ L('Save project', 'احفظ المشروع') }}</button> <a class="btn" href="{{ url_for('dashboard') }}">{{ L('Cancel', 'إلغاء') }}</a></div>
+</form>
+{% endblock %}

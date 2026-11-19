@@ -1,0 +1,31 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf, badge, money with context %}
+{% block body %}
+<div class="spread"><div><h1 dir="auto">{{ c.name }}</h1><p class="muted">{{ c.contact_person or '' }} {% set w = wa(c.whatsapp or c.phone) %}{% if w %}· <a href="{{ w }}" target="_blank" rel="noopener">WhatsApp <bdi dir="ltr">{{ c.whatsapp or c.phone }}</bdi></a>{% endif %} {% if c.email %}· <bdi dir="ltr">{{ c.email }}</bdi>{% endif %}</p></div>
+<div class="head-actions"><a class="btn primary" href="{{ url_for('project_new', client_id=c.id) }}">+ {{ L('New project', 'مشروع جديد') }}</a><a class="btn" href="{{ url_for('quotation_new', client_id=c.id) }}">{{ L('New quotation', 'عرض سعر جديد') }}</a><a class="btn" href="{{ url_for('client_form', cid=c.id) }}">{{ L('Edit', 'تعديل') }}</a></div></div>
+<h2>{{ L('Projects', 'المشاريع') }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Project', 'المشروع') }}</th><th>{{ L('Work', 'العمل') }}</th><th>{{ L('Submission', 'التسليم') }}</th><th class="r">{{ L('Fee', 'الأتعاب') }}</th><th class="r">{{ L('Received', 'المستلم') }}</th><th class="r">{{ L('Balance', 'المتبقي') }}</th></tr></thead><tbody>
+{% set ns = namespace(fee=0, rec=0, bal=0) %}
+{% for r in projects %}{% set ns.rec = ns.rec + r.money.received %}{% if r.money.fee is not none %}{% set ns.fee = ns.fee + r.money.fee %}{% set ns.bal = ns.bal + r.money.balance %}{% endif %}
+<tr><td class="first"><a class="pname" href="{{ url_for('project_view', pid=r.p.id) }}">{{ r.p.name }}</a> <span class="small muted"><bdi dir="ltr">{{ r.p.number }}</bdi>{% if r.p.owner_name %} · {{ r.p.owner_name }}{% endif %}</span></td><td data-l="{{ L('Work', 'العمل') }}">{{ badge(WORK, r.p.work_status) }}</td><td data-l="{{ L('Submission', 'التسليم') }}">{{ badge(SUB, r.sub.status) }}</td><td data-l="{{ L('Fee', 'الأتعاب') }}" class="r">{% if r.money.fee is none %}<span class="b b-pending_agreement">{{ label(MONEY, 'pending_agreement') }}</span>{% else %}{{ money(r.money.fee) }}{% endif %}</td><td data-l="{{ L('Received', 'المستلم') }}" class="r">{{ money(r.money.received) }}</td><td data-l="{{ L('Balance', 'المتبقي') }}" class="r">{% if r.money.balance is none %}—{% else %}{{ money(r.money.balance) }}{% endif %}</td></tr>
+{% else %}<tr><td colspan="6" class="empty">—</td></tr>{% endfor %}
+</tbody><tfoot><tr><th colspan="3">{{ L('Total (agreed jobs)', 'المجموع (المتفق عليه)') }}</th><th class="r">{{ money(ns.fee) }}</th><th class="r">{{ money(ns.rec) }}</th><th class="r">{{ money(ns.bal) }}</th></tr></tfoot></table></div>
+
+<h2>{{ L('Payments from this client', 'دفعات هالعميل') }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Date', 'التاريخ') }}</th><th class="r">{{ L('Amount', 'المبلغ') }}</th><th class="r">{{ L('Unallocated', 'غير موزع') }}</th><th>{{ L('Reference', 'المرجع') }}</th><th></th></tr></thead><tbody>
+{% for pay in payments %}<tr><td class="first num">{{ d(pay.date_received) }} <span class="small muted">R-{{ '%05d'|format(pay.id) }}</span></td><td data-l="{{ L('Amount', 'المبلغ') }}" class="r">{{ money(pay.amount_fils) }}</td><td data-l="{{ L('Unallocated', 'غير موزع') }}" class="r">{% if pay.unallocated %}<span class="b b-waiting">{{ kwd(pay.unallocated) }}</span>{% else %}—{% endif %}</td><td data-l="{{ L('Reference', 'المرجع') }}">{{ pay.reference or '' }}</td><td><a class="btn sm" href="{{ url_for('payment_receipt', pay_id=pay.id) }}" target="_blank">{{ L('Receipt', 'سند') }}</a></td></tr>
+{% else %}<tr><td colspan="5" class="empty">—</td></tr>{% endfor %}</tbody></table></div>
+
+{% if projects %}
+<details class="sec" style="margin-top:12px"><summary>{{ L('Record one payment covering several projects', 'سجل دفعة وحدة لأكتر من مشروع') }}</summary><div class="in">
+<form method="post" action="{{ url_for('client_receipt', cid=c.id) }}">{{ csrf() }}<input type="hidden" name="request_key" value="{{ new_key }}">
+  <div class="row"><div class="field"><label for="ra">{{ L('Total received (KWD)', 'المبلغ المستلم (د.ك)') }}</label><input id="ra" name="amount" inputmode="decimal" dir="ltr" required></div><div class="field"><label for="rd">{{ L('Date received', 'تاريخ الاستلام') }}</label><input id="rd" type="date" name="date_received" value="{{ today }}" required></div><div class="field"><label for="rm">{{ L('Method', 'الطريقة') }}</label><input id="rm" name="method" value="Bank transfer"></div><div class="field"><label for="rr">{{ L('Reference', 'المرجع') }}</label><input id="rr" name="reference"></div></div>
+  <p class="small">{{ L('Split it between projects. Anything not allocated stays visible as unallocated: nothing is divided automatically.', 'وزّعها على المشاريع. أي مبلغ ما بتوزعه بيضل ظاهر كغير موزع، وما في توزيع تلقائي.') }}</p>
+  {% for r in projects %}{% if r.money.balance %}<div class="row"><div class="field"><label for="al{{ r.p.id }}">{{ r.p.number }} {{ r.p.name }} ({{ L('balance', 'المتبقي') }} {{ kwd(r.money.balance) }})</label><input id="al{{ r.p.id }}" name="alloc_{{ r.p.id }}" inputmode="decimal" dir="ltr"></div></div>{% endif %}{% endfor %}
+  <button class="btn primary">{{ L('Record receipt', 'سجّل السند') }}</button>
+</form></div></details>{% endif %}
+
+<h2>{{ L('Quotations', 'العروض') }}</h2>
+<ul>{% for q in quotes %}<li><a href="{{ url_for('quotation_view', qid=q.id) }}"><bdi dir="ltr">{{ q.number }} Rev {{ q.revision }}</bdi></a> {{ badge(QUOTE, q.status) }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+<h2>{{ L('Client rules (Archive)', 'قواعد هالعميل (الأرشيف)') }}</h2>
+{% for r in rules %}<div class="rule"><a href="{{ url_for('archive_rule', rid=r.id) }}">#{{ r.id }} rev {{ r.current_revision }}</a> <span dir="auto">{{ r.text }}</span></div>{% else %}<p class="muted small">{{ L('None. Save one from any of this client\'s projects (Archive tab) and choose "This client".', 'ما في. احفظ وحدة من أي مشروع لهالعميل واختار "هالعميل".') }}</p>{% endfor %}
+{% endblock %}

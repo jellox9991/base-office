@@ -1,0 +1,66 @@
+{# shared by New project and the Overview edit form. Expects: v (values), errors, presets, scope, types #}
+{% from '_m.html' import field with context %}
+<details class="sec" {{ 'open' if open_all }}>
+  <summary>{{ L('1. Client and location', '١. العميل والموقع') }}</summary><div class="in">
+  <div class="row">
+    {{ field('owner_name', 'Project owner (if different from client)', 'مالك المشروع (إذا غير العميل)', v.owner_name, errors=errors) }}
+    {{ field('area', 'Kuwait area', 'المنطقة', v.area, errors=errors, attrs='list="areas"') }}
+  </div>
+  <div class="row">
+    {{ field('block', 'Block', 'قطعة', v.block, errors=errors, attrs='inputmode="numeric"') }}
+    {{ field('street', 'Street', 'شارع', v.street, errors=errors) }}
+    {{ field('plot', 'Plot no.', 'رقم القسيمة', v.plot, errors=errors) }}
+  </div>
+  {{ field('map_link', 'Map link (optional)', 'رابط الخريطة (اختياري)', v.map_link, type='url', errors=errors) }}
+  <datalist id="areas">{% for a in ['Sabah Al-Ahmad', 'صباح الأحمد', 'Jaber Al-Ahmad', 'جابر الأحمد', 'Saad Al-Abdullah', 'سعد العبدالله', 'Mutlaa', 'المطلاع', 'Abdullah Al-Mubarak', 'عبدالله المبارك', 'Sabah Al-Salem', 'صباح السالم', 'Mangaf', 'المنقف', 'Fintas', 'الفنطاس', 'Abu Fatira', 'أبو فطيرة', 'Salwa', 'سلوى', 'Jabriya', 'الجابرية', 'Hawally', 'حولي', 'Fahaheel', 'الفحيحيل', 'Wafra', 'الوفرة', 'Khairan', 'الخيران'] %}<option value="{{ a }}">{% endfor %}</datalist>
+</div></details>
+
+<details class="sec" {{ 'open' if open_all }}>
+  <summary>{{ L('2. Building information', '٢. معلومات المبنى') }}</summary><div class="in">
+  <div class="row">
+    <div class="field"><label for="f_bt">{{ L('Building type', 'نوع المبنى') }}</label>
+      <select id="f_bt" name="building_type"><option value="">—</option>{% for t in types %}<option value="{{ t }}" {{ 'selected' if v.building_type == t }}>{{ t }}</option>{% endfor %}</select></div>
+    {{ field('plot_area_m2', 'Plot area (m²)', 'مساحة القسيمة (م²)', v.plot_area_m2, errors=errors, attrs='inputmode="decimal"') }}
+  </div>
+  <div class="row">
+    {{ field('basement_count', 'Basements', 'عدد السراديب', v.basement_count, errors=errors, attrs='inputmode="numeric"') }}
+    {{ field('upper_floor_count', 'Upper floors above ground', 'الأدوار فوق الأرضي', v.upper_floor_count, errors=errors, attrs='inputmode="numeric"') }}
+    <div class="field"><label for="f_roof">{{ L('Roof level', 'السطح') }}</label>
+      <select id="f_roof" name="has_roof"><option value="" {{ 'selected' if v.has_roof is none or v.has_roof == '' }}>—</option><option value="1" {{ 'selected' if v.has_roof in (1, '1') }}>{{ L('Yes', 'نعم') }}</option><option value="0" {{ 'selected' if v.has_roof in (0, '0') }}>{{ L('No', 'لا') }}</option></select></div>
+  </div>
+  <div class="row">
+    {{ field('roof_structures', 'Roof structures (stair room, tanks...)', 'ملحق السطح (غرفة الدرج، الخزانات...)', v.roof_structures, errors=errors) }}
+    {{ field('typical_ftf_mm', 'Typical floor-to-floor (m)', 'ارتفاع الدور النموذجي (م)', m(v.typical_ftf_mm) if v.typical_ftf_mm is number else v.typical_ftf_mm, errors=errors, attrs='inputmode="decimal" placeholder="4.000"') }}
+    {{ field('gf_ffl_mm', 'Ground floor FFL (m)', 'منسوب الأرضي FFL (م)', m(v.gf_ffl_mm) if v.gf_ffl_mm is number else v.gf_ffl_mm, errors=errors, attrs='inputmode="decimal" placeholder="+0.600"') }}
+  </div>
+  {{ field('building_notes', 'Notes', 'ملاحظات', v.building_notes, type='textarea', errors=errors) }}
+  <p class="hint">{{ L('Basements and floors generate the floor table automatically. You can edit every level afterwards.', 'عدد السراديب والأدوار بيولّد جدول الأدوار تلقائياً، وبتقدر تعدّل كل دور بعدين.') }}</p>
+</div></details>
+
+<details class="sec" {{ 'open' if open_all }}>
+  <summary>{{ L('3. BOQ scope', '٣. نطاق جدول الكميات') }}</summary><div class="in">
+  {% if presets %}<div class="field"><label for="f_preset">{{ L('Scope preset', 'نطاق جاهز') }}</label>
+    <select id="f_preset" name="preset"><option value="">—</option>{% for k in presets %}<option value="{{ k }}">{{ k }}</option>{% endfor %}</select>
+    <div class="hint">{{ L('A preset ticks its items on save, in addition to the boxes below.', 'النطاق الجاهز بيعلّم بنوده عند الحفظ، بالإضافة للخيارات تحت.') }}</div></div>{% endif %}
+  <div class="checks" role="group" aria-label="{{ L('Scope', 'النطاق') }}">
+    {% for s in SCOPES %}<label><input type="checkbox" name="scope_{{ s }}" value="1" {{ 'checked' if s in scope }}> {{ scope_label(s) }}</label>{% endfor %}
+  </div>
+  <div class="row" style="margin-top:8px">
+    {{ field('custom_scope', 'Custom items (comma separated)', 'بنود إضافية (افصل بفاصلة)', v.custom_scope, errors=errors) }}
+    {{ field('excel_template', "Client's required Excel template", 'قالب الإكسل المطلوب من العميل', v.excel_template, errors=errors) }}
+  </div>
+  {{ field('exclusions', 'Exclusions', 'الاستثناءات', v.exclusions, type='textarea', errors=errors) }}
+</div></details>
+
+<details class="sec" {{ 'open' if open_all }}>
+  <summary>{{ L('4. Job details', '٤. تفاصيل الشغل') }}</summary><div class="in">
+  <div class="row">
+    {{ field('date_received', 'Date received', 'تاريخ الاستلام', v.date_received, type='date', errors=errors) }}
+    {{ field('due_date', 'Target submission date', 'موعد التسليم', v.due_date, type='date', errors=errors) }}
+    {{ field('responsible', 'Person responsible', 'المسؤول', v.responsible, errors=errors) }}
+  </div>
+  {{ field('source_drawings', 'Source drawings', 'المخططات المستلمة', v.source_drawings, type='textarea', errors=errors) }}
+  {{ field('missing_info', 'Missing information (one per line)', 'المعلومات الناقصة (كل وحدة بسطر)', v.missing_info, type='textarea', errors=errors) }}
+  {% if show_fee %}{{ field('agreed_fee', 'Agreed service fee if known (KWD)', 'الأتعاب المتفق عليها إذا معروفة (د.ك)', v.agreed_fee, errors=errors, attrs='inputmode="decimal" placeholder="0.000"', hint=L('Leave blank if not agreed yet: it will show as Pending agreement.', 'اتركها فاضية إذا لسا ما اتفقتوا: رح تطلع بانتظار الاتفاق.')) }}{% endif %}
+  {{ field('internal_notes', 'Internal notes (never exported)', 'ملاحظات داخلية (ما بتنصدّر)', v.internal_notes, type='textarea', errors=errors) }}
+</div></details>

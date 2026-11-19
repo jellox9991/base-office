@@ -1,0 +1,25 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf with context %}
+{% block body %}
+<h1>{{ L('Archive', 'الأرشيف') }} #{{ r.id }} <span class="b b-{{ r.status }}">{{ r.status }}</span></h1>
+<p class="muted">{{ r.scope }}{% if client %}: <a href="{{ url_for('client_view', cid=client.id) }}">{{ client.name }}</a>{% endif %}{% if project %}: <a href="{{ url_for('project_view', pid=project.id, tab='archive') }}"><bdi dir="ltr">{{ project.number }}</bdi> {{ project.name }}</a>{% endif %} · {{ r.kind }} · {{ L('effective', 'ساري من') }} {{ d(r.effective_date) }}{% if r.source_ref %} · {{ L('source', 'المصدر') }}: {{ r.source_ref }}{% endif %}{% if not r.active %} · <strong>{{ L('retired', 'ملغاة') }}</strong>{% endif %}</p>
+<div class="card"><div dir="auto" style="font-size:16px">{{ r.text }}</div><div class="small muted">rev {{ r.current_revision }}</div></div>
+
+{% if r.status != 'approved' %}<div class="card warn"><form method="post" class="row">{{ csrf() }}<input type="hidden" name="action" value="confirm">
+  <div class="field"><label for="cs">{{ L('Confirm and apply to', 'أكّد وطبّق على') }}</label><select id="cs" name="scope"><option value="project" {{ 'selected' if r.scope == 'project' }}>{{ L('This project only', 'لهالمشروع بس') }}</option><option value="client">{{ L('This client', 'هالعميل') }}</option><option value="company" {{ 'selected' if r.scope == 'company' }}>{{ L('All projects', 'كل المشاريع') }}</option></select></div>
+  <div class="field" style="flex:0 0 auto"><button class="btn primary">{{ L('Approve', 'اعتمد') }}</button></div></form>
+  <p class="small">{{ L('Drafts and examples are never applied to a BOQ until you approve them.', 'المسودات والأمثلة ما بتنطبق على أي جدول لحتى تعتمدها.') }}</p></div>{% endif %}
+
+<div class="card"><h3>{{ L('Revise (old text is kept)', 'تعديل (النص القديم بيضل محفوظ)') }}</h3>
+<form method="post">{{ csrf() }}<input type="hidden" name="action" value="revise"><input type="hidden" name="expected_revision" value="{{ r.current_revision }}">
+  <div class="field"><label for="rt">{{ L('New text', 'النص الجديد') }}</label><textarea id="rt" name="text" dir="auto">{{ r.text }}</textarea></div>
+  <div class="field"><label for="rr">{{ L('Reason for change', 'سبب التعديل') }}</label><input id="rr" name="reason" required></div>
+  <button class="btn primary">{{ L('Save revision', 'احفظ المراجعة') }}</button></form>
+<p class="hint">{{ L('BOQs already issued keep the revision they used; new jobs get the new revision.', 'الجداول اللي انسلمت بتضل على المراجعة اللي استخدمتها، والمشاريع الجديدة بتاخد المراجعة الجديدة.') }}</p>
+<form method="post" style="margin-top:8px">{{ csrf() }}<input type="hidden" name="action" value="toggle"><button class="btn sm {{ '' if not r.active else 'danger' }}">{{ L('Restore', 'استرجاع') if not r.active else L('Retire rule', 'إلغاء القاعدة') }}</button></form></div>
+
+<h3>{{ L('Revision history', 'سجل المراجعات') }}</h3>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>Rev</th><th>{{ L('Text', 'النص') }}</th><th>{{ L('Reason', 'السبب') }}</th><th>{{ L('By / when', 'بواسطة / متى') }}</th></tr></thead><tbody>
+{% for v in revs %}<tr><td class="first">rev {{ v.revision }}</td><td data-l="{{ L('Text', 'النص') }}" dir="auto">{{ v.text }}</td><td data-l="{{ L('Reason', 'السبب') }}">{{ v.reason or '' }}</td><td data-l="{{ L('By', 'بواسطة') }}" class="small">{{ v.author or '' }} {{ dt(v.created_at) }}</td></tr>{% endfor %}</tbody></table></div>
+<h3>{{ L('Used in issued BOQs', 'مستخدمة بتسليمات') }}</h3>
+<ul>{% for u in used %}<li><a href="{{ url_for('project_view', pid=u.dl.project_id, tab='drawings') }}"><bdi dir="ltr">{{ u.dl.number }}</bdi></a> {{ d(u.dl.delivery_date) }} · rev {{ u.revision }}</li>{% else %}<li class="muted">—</li>{% endfor %}</ul>
+{% endblock %}

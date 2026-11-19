@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="{{ lang }}" dir="{{ 'rtl' if lang == 'ar' else 'ltr' }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ L('BASE Design Office', 'مكتب بيس ديزاين') }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if user %}
+<header class="top"><div class="top-in">
+  <a class="brand" href="{{ url_for('dashboard') }}">{{ settings.company_name or 'BASE Design' }} <span>{{ L('Office', 'المكتب') }}</span></a>
+  {% set ep = request.endpoint or '' %}
+  <nav class="nav" aria-label="{{ L('Main', 'القائمة') }}">
+    <a href="{{ url_for('dashboard') }}" class="{{ 'on' if ep in ('dashboard','project_view','project_new') }}">{{ L('Projects', 'المشاريع') }}</a>
+    <a href="{{ url_for('clients_list') }}" class="{{ 'on' if ep.startswith('client') }}">{{ L('Clients', 'العملاء') }}</a>
+    <a href="{{ url_for('quotations_list') }}" class="{{ 'on' if ep.startswith('quotation') }}">{{ L('Quotations', 'العروض') }}</a>
+    <a href="{{ url_for('collections') }}" class="{{ 'on' if ep == 'collections' }}">{{ L('Who owes me', 'المستحقات') }}</a>
+    <a href="{{ url_for('payments_list') }}" class="{{ 'on' if ep == 'payments_list' }}">{{ L('Payments', 'الدفعات') }}</a>
+    <a href="{{ url_for('archive_page') }}" class="{{ 'on' if ep.startswith('archive') }}">{{ L('Archive', 'الأرشيف') }}</a>
+    <a href="{{ url_for('activity') }}" class="{{ 'on' if ep == 'activity' }}">{{ L('Activity', 'السجل') }}</a>
+    <a href="{{ url_for('settings_page') }}" class="{{ 'on' if ep == 'settings_page' }}">{{ L('Settings', 'الإعدادات') }}</a>
+  </nav>
+  <div class="top-tools">
+    {% if lang == 'ar' %}<a href="{{ url_for('set_lang', code='en') }}" lang="en">English</a>{% else %}<a href="{{ url_for('set_lang', code='ar') }}" lang="ar">عربي</a>{% endif %}
+    <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf" value="{{ csrf_token() }}"><button>{{ L('Sign out', 'خروج') }}</button></form>
+  </div>
+</div></header>
+{% endif %}
+<main id="main">
+{% with msgs = get_flashed_messages(with_categories=true) %}{% for c, m in msgs %}<div class="flash {{ c }}" role="status">{{ m }}</div>{% endfor %}{% endwith %}
+{% block body %}{% endblock %}
+</main>
+<script>
+  // keep a "saving..." state and stop double submits on slow phone connections
+  document.addEventListener('submit', function (e) {
+    var f = e.target; if (f.dataset.sent) { e.preventDefault(); return; }
+    if (!f.hasAttribute('data-multi')) { f.dataset.sent = '1'; setTimeout(function(){ delete f.dataset.sent; }, 4000); }
+    var b = e.submitter; if (b && !f.hasAttribute('data-multi')) { b.setAttribute('aria-busy', 'true'); }
+  });
+  window.addEventListener('offline', function(){ var d=document.createElement('div'); d.className='flash error'; d.id='offline'; d.textContent='{{ L("You are offline. Changes will not be saved until the connection returns.", "ما في اتصال. التعديلات ما رح تنحفظ لحتى يرجع الاتصال.") }}'; document.getElementById('main').prepend(d); });
+  window.addEventListener('online', function(){ var d=document.getElementById('offline'); if (d) d.remove(); });
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf, money as kd with context %}
+{% block body %}
+<h1>{{ {'quotation': L('Send quotation', 'إرسال عرض السعر'), 'boq': L('Submit BOQ', 'تسليم جدول الكميات'), 'payment': L('Follow up on payment', 'متابعة الدفعة')}[kind] }}</h1>
+<p class="muted"><a href="{{ url_for('project_view', pid=p.id) }}">{{ p.name }}</a> <bdi dir="ltr">{{ p.number }}</bdi> · {{ client.name }}</p>
+<div class="chips">{% for lg, t in [('ar', 'عربي'), ('en', 'English')] %}<a class="chip {{ 'on' if lang_e == lg }}" href="{{ url_for('email_draft', pid=p.id, kind=kind, language=lg, quotation_id=qsel.id if qsel else none) }}">{{ t }}</a>{% endfor %}</div>
+<form method="post" class="card">{{ csrf() }}<input type="hidden" name="language" value="{{ lang_e }}">
+  {% if kind == 'quotation' %}<div class="field"><label for="eq">{{ L('Quotation revision to attach', 'مراجعة العرض المرفقة') }}</label>
+    <select id="eq" name="quotation_id" onchange="location='{{ url_for('email_draft', pid=p.id, kind=kind, language=lang_e) }}&quotation_id='+this.value">{% for q in quotes %}<option value="{{ q.id }}" {{ 'selected' if qsel and q.id == qsel.id }}>{{ q.number }} Rev {{ q.revision }} ({{ label(QUOTE, q.status) }})</option>{% else %}<option value="">{{ L('No quotation yet', 'ما في عرض لسا') }}</option>{% endfor %}</select>
+    {% if qsel and qsel.status == 'draft' %}<div class="hint">{{ L('This revision is a draft. Confirming the email as sent freezes its PDF and marks it Sent.', 'هالمراجعة مسودة. لما تأكد إرسال الإيميل بتتجمد النسخة وبتصير مرسلة.') }}</div>{% endif %}</div>{% endif %}
+  {% if kind == 'payment' %}<p class="small">{{ L('Agreed fee', 'الأتعاب') }}: {{ kd(money.fee) }} · {{ L('Received', 'المستلم') }}: {{ kd(money.received) }} · {{ L('Balance', 'المتبقي') }}: <strong>{{ kd(money.balance) }}</strong> {{ L('KWD', 'د.ك') }}</p>{% endif %}
+  <div class="field"><label for="eto">{{ L('To', 'إلى') }}</label><input id="eto" name="to" type="email" value="{{ dft.to }}" dir="ltr" placeholder="client@example.com">{% if not dft.to %}<div class="hint">{{ L('This client has no email saved. Type it here or add it on the client page.', 'ما في إيميل محفوظ لهالعميل. اكتبه هون أو ضيفه بصفحة العميل.') }}</div>{% endif %}</div>
+  <div class="field"><label for="esub">{{ L('Subject', 'الموضوع') }}</label><input id="esub" name="subject" value="{{ dft.subject }}" dir="auto"></div>
+  <div class="field"><label for="ebody">{{ L('Message', 'الرسالة') }}</label><textarea id="ebody" name="body" rows="12" dir="auto">{{ dft.body }}</textarea></div>
+  {% if outgoing %}<div class="field"><label>{{ L('Attach BASE deliverables', 'إرفاق ملفات بيس') }}</label><div class="checks" style="flex-direction:column">{% for o in outgoing %}<label><input type="checkbox" name="attach" value="{{ o.id }}" {{ 'checked' if o.id|string in att }}> {{ o.title }} rev {{ o.revision or '-' }} · <bdi dir="ltr">{{ o.original_name }}</bdi></label>{% endfor %}</div></div>{% endif %}
+  <p class="small muted">{{ L('From', 'من') }}: {{ settings.company_name }} &lt;<bdi dir="ltr">{{ settings.company_email }}</bdi>&gt;</p>
+  <div class="head-actions">
+    <button class="btn" name="action" value="eml" formtarget="_blank">{{ L('1. Open as email draft with attachments (.eml)', '١. افتحها كمسودة إيميل مع المرفقات (.eml)') }}</button>
+    {% if smtp %}<button class="btn primary" name="action" value="smtp">{{ L('Send now from', 'أرسل الآن من') }} {{ settings.company_email }}</button>{% endif %}
+    <button class="btn primary" name="action" value="mark_sent">{{ L('2. I sent it: record in activity', '٢. أرسلته: سجّله بالسجل') }}</button>
+  </div>
+  <p class="hint">{{ L('Nothing is recorded as sent until you press "I sent it". The .eml file opens in Outlook or Windows Mail as an unsent draft with the files attached, so you can check the recipient, wording and attachments before sending from basedesignkw@gmail.com.', 'ما بينسجل شي كمرسل لحتى تضغط "أرسلته". ملف .eml بيفتح بأوتلوك أو بريد ويندوز كمسودة مع المرفقات، لتراجع المستلم والكلام والمرفقات قبل الإرسال.') }}</p>
+</form>
+{% endblock %}

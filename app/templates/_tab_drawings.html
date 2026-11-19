@@ -1,0 +1,58 @@
+{% from '_m.html' import csrf, badge with context %}
+{% for dirn, title in [('incoming', L('Incoming client drawings', 'مخططات واردة من العميل')), ('outgoing', L('Outgoing BASE deliverables', 'ملفات صادرة من بيس'))] %}
+<h2>{{ title }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Title', 'العنوان') }}</th><th>{{ L('Discipline', 'الاختصاص') }}</th><th>{{ L('Floor', 'الدور') }}</th><th>{{ L('Rev', 'المراجعة') }}</th><th>{{ L('Date', 'التاريخ') }}</th><th>{{ L('File', 'الملف') }}</th><th></th></tr></thead><tbody>
+{% for dr in drawings if dr.direction == dirn %}<tr style="{{ '' if dr.is_current else 'opacity:.6' }}"><td class="first"><strong dir="auto">{{ dr.title }}</strong> {% if dr.is_current %}<span class="b b-approved">{{ L('Current', 'الحالي') }}</span>{% else %}<span class="b b-superseded">{{ L('Superseded', 'قديم') }}</span>{% endif %}</td>
+<td data-l="{{ L('Discipline', 'الاختصاص') }}">{{ dr.discipline or '' }}</td><td data-l="{{ L('Floor', 'الدور') }}">{{ dr.floor or '' }}</td><td data-l="{{ L('Rev', 'المراجعة') }}"><bdi dir="ltr">{{ dr.revision or '-' }}</bdi></td><td data-l="{{ L('Date', 'التاريخ') }}" class="num">{{ d(dr.date_received) }}</td>
+<td data-l="{{ L('File', 'الملف') }}"><a href="{{ url_for('drawing_download', did=dr.id) }}"><bdi dir="ltr">{{ dr.original_name }}</bdi></a> <span class="small muted">{{ (dr.size_bytes / 1024)|round(0)|int }} KB</span></td>
+<td>{% if not dr.is_current %}<form method="post" action="{{ url_for('drawing_current', did=dr.id) }}">{{ csrf() }}<button class="btn sm">{{ L('Make current', 'اجعله الحالي') }}</button></form>{% endif %}</td></tr>
+{% else %}<tr><td colspan="7" class="empty">—</td></tr>{% endfor %}</tbody></table></div>
+{% endfor %}
+
+<details class="sec" style="margin-top:14px" {{ 'open' if not drawings }}><summary>{{ L('Upload a file (PDF, DWG, RVT, Excel)', 'رفع ملف (PDF، DWG، RVT، إكسل)') }}</summary><div class="in">
+<form method="post" action="{{ url_for('drawing_upload', pid=p.id) }}" enctype="multipart/form-data">{{ csrf() }}
+  <div class="row">
+    <div class="field"><label for="u_dir">{{ L('Direction', 'النوع') }}</label><select id="u_dir" name="direction"><option value="incoming">{{ L('Incoming from client', 'وارد من العميل') }}</option><option value="outgoing">{{ L('Outgoing BASE deliverable', 'صادر من بيس') }}</option></select></div>
+    <div class="field"><label for="u_file">{{ L('File', 'الملف') }}</label><input id="u_file" type="file" name="file" required accept=".pdf,.dwg,.dxf,.rvt,.rfa,.xlsx,.xls,.xlsm,.csv,.png,.jpg,.jpeg,.zip,.docx"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label for="u_t">{{ L('Title (same title = new revision)', 'العنوان (نفس العنوان = مراجعة جديدة)') }}</label><input id="u_t" name="title" dir="auto" list="dtitles"></div>
+    <div class="field"><label for="u_d">{{ L('Discipline', 'الاختصاص') }}</label><select id="u_d" name="discipline"><option>Architectural</option><option>Structural</option><option>MEP</option><option>BOQ</option><option>Other</option></select></div>
+    <div class="field"><label for="u_f">{{ L('Floor', 'الدور') }}</label><input id="u_f" name="floor" list="floors"></div>
+    <div class="field"><label for="u_r">{{ L('Revision', 'المراجعة') }}</label><input id="u_r" name="revision" placeholder="R0"></div>
+    <div class="field"><label for="u_dt">{{ L('Date received', 'تاريخ الاستلام') }}</label><input id="u_dt" type="date" name="date_received" value="{{ today }}"></div>
+  </div>
+  <datalist id="dtitles">{% for dr in drawings %}<option value="{{ dr.title }}">{% endfor %}</datalist>
+  <datalist id="floors">{% for l in levels %}<option value="{{ l.name }}">{% endfor %}<option value="All"></datalist>
+  <button class="btn primary">{{ L('Upload', 'ارفع') }}</button>
+</form></div></details>
+
+<h2 id="deliver">{{ L('Submissions', 'التسليمات') }} {{ badge(SUB, sub.status) }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Date', 'التاريخ') }}</th><th>{{ L('Scope delivered', 'المسلّم') }}</th><th>{{ L('File / rev', 'الملف / المراجعة') }}</th><th>{{ L('Recipient', 'المستلم') }}</th><th>{{ L('Method', 'الطريقة') }}</th><th>{{ L('Archive rules used', 'قواعد الأرشيف المستخدمة') }}</th></tr></thead><tbody>
+{% for dl in deliveries %}<tr><td class="first num">{{ d(dl.delivery_date) }}</td><td data-l="{{ L('Scope delivered', 'المسلّم') }}">{% for s in json_loads(dl.scope) %}{{ scope_label(s) }}{{ ', ' if not loop.last }}{% endfor %}{% if dl.completes_scope %} <span class="b b-full">{{ L('completes scope', 'يكمّل النطاق') }}</span>{% endif %}</td>
+<td data-l="{{ L('File / rev', 'الملف / المراجعة') }}">{% if dl.drawing_id %}<a href="{{ url_for('drawing_download', did=dl.drawing_id) }}"><bdi dir="ltr">{{ dl.original_name }}</bdi></a>{% endif %} <bdi dir="ltr">{{ dl.file_revision or '' }}</bdi></td>
+<td data-l="{{ L('Recipient', 'المستلم') }}">{{ dl.recipient or '' }}</td><td data-l="{{ L('Method', 'الطريقة') }}">{{ dl.method or '' }}</td>
+<td data-l="{{ L('Archive rules used', 'قواعد الأرشيف') }}" class="small">{% for u in json_loads(dl.rules_used) %}<a href="{{ url_for('archive_rule', rid=u.rule_id) }}">#{{ u.rule_id }} rev {{ u.revision }}</a>{{ ', ' if not loop.last }}{% else %}—{% endfor %}</td></tr>
+{% else %}<tr><td colspan="6" class="empty">{{ L('Nothing submitted yet. A finished BOQ stays "Ready to submit / Not submitted" until a delivery is recorded here.', 'لسا ما انسلم شي. الجدول الجاهز بيضل "جاهز للتسليم / لم يُسلَّم" لحتى تسجل التسليم هون.') }}</td></tr>{% endfor %}</tbody></table></div>
+
+<div class="card" style="margin-top:12px">
+<h3>{{ L('Record submission', 'تسجيل تسليم') }}</h3>
+<form method="post" action="{{ url_for('delivery_add', pid=p.id) }}">{{ csrf() }}<input type="hidden" name="request_key" value="{{ new_key }}">
+  <div class="field"><label>{{ L('Scope delivered', 'النطاق المسلّم') }}</label><div class="checks">
+    {% for s in scope %}<label><input type="checkbox" name="d_{{ s }}" value="1" {{ 'checked' if s in sub.remaining }}> {{ scope_label(s) }}{% if s in sub.delivered %} <span class="small muted">({{ L('re-issue', 'إعادة إصدار') }})</span>{% endif %}</label>{% endfor %}
+    <label><input type="checkbox" name="completes_scope" value="1"> <strong>{{ L('This completes the agreed scope', 'هيك كمل النطاق المتفق عليه') }}</strong></label>
+  </div></div>
+  <div class="row">
+    <div class="field"><label for="dl_d">{{ L('Date delivered', 'تاريخ التسليم') }}</label><input id="dl_d" type="date" name="delivery_date" value="{{ today }}" required></div>
+    <div class="field"><label for="dl_f">{{ L('File delivered', 'الملف المسلّم') }}</label><select id="dl_f" name="drawing_id"><option value="">—</option>{% for dr in drawings if dr.direction == 'outgoing' %}<option value="{{ dr.id }}">{{ dr.title }} rev {{ dr.revision or '-' }} ({{ dr.original_name }})</option>{% endfor %}</select></div>
+    <div class="field"><label for="dl_r">{{ L('File revision', 'مراجعة الملف') }}</label><input id="dl_r" name="file_revision"></div>
+  </div>
+  <div class="row">
+    <div class="field"><label for="dl_to">{{ L('Recipient', 'المستلم') }}</label><input id="dl_to" name="recipient" value="{{ client.contact_person or client.name }}"></div>
+    <div class="field"><label for="dl_m">{{ L('Method', 'الطريقة') }}</label><select id="dl_m" name="method"><option>Email</option><option>WhatsApp</option><option>USB / hand delivery</option><option>Cloud link</option></select></div>
+    <div class="field"><label for="dl_n">{{ L('Notes', 'ملاحظات') }}</label><input id="dl_n" name="notes"></div>
+  </div>
+  {% if rules %}<p class="small muted">{{ L('Archive rules recorded with this issue:', 'قواعد الأرشيف اللي رح تنسجل مع هالتسليم:') }} {% for r in rules %}#{{ r.id }} rev {{ r.current_revision }}{{ ', ' if not loop.last }}{% endfor %}</p>{% endif %}
+  <p class="hint">{{ L('Re-issuing a corrected file does not add another fee.', 'إعادة إرسال ملف مصحح ما بتضيف أتعاب جديدة.') }}</p>
+  <button class="btn primary">{{ L('Record submission', 'سجّل التسليم') }}</button>
+</form></div>

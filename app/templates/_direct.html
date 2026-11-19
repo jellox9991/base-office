@@ -1,0 +1,11 @@
+<details class="sec" style="margin-top:14px"><summary>{{ L('Direct job agreed by WhatsApp / phone (no quotation)', 'شغل متفق عليه بالواتساب أو التلفون (بدون عرض سعر)') }}</summary><div class="in">
+<form method="post" action="{{ url_for('project_direct', pid=p.id) }}">{{ csrf() }}
+  <div class="row">
+    <div class="field"><label for="dfee">{{ L('Agreed fee (KWD)', 'الأتعاب المتفق عليها (د.ك)') }}</label><input id="dfee" name="fee" inputmode="decimal" placeholder="0.000" value="{{ kwd(p.agreed_fee_fils, '') }}"></div>
+    <div class="field"><label for="don">{{ L('Agreed on', 'تاريخ الاتفاق') }}</label><input id="don" type="date" name="agreed_on" value="{{ today }}"></div>
+    <div class="field"><label for="dch">{{ L('Channel', 'الوسيلة') }}</label><select id="dch" name="channel"><option>WhatsApp</option><option>Phone</option><option>Meeting</option><option>Email</option></select></div>
+  </div>
+  <div class="field"><label for="dev">{{ L('Evidence / what was agreed', 'الإثبات / شو اتفقتوا') }}</label><input id="dev" name="evidence" placeholder="{{ L('e.g. WhatsApp 12/11: 30 KD for concrete + rebar + blockwork', 'مثلاً واتساب ١٢/١١: ٣٠ دينار خرسانة وحديد وطابوق') }}"></div>
+  <button class="btn">{{ L('Save agreed fee', 'احفظ الأتعاب') }}</button>
+  <p class="hint">{{ L('Changing an agreed fee later is logged as a correction with before/after values.', 'أي تعديل على الأتعاب بعدين بينسجل كتصحيح مع القيمة قبل وبعد.') }}</p>
+</form></div></details>

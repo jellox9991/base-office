@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% block body %}
+<h1>{{ L('Activity', 'السجل') }}</h1>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('When', 'الوقت') }}</th><th>{{ L('Project / client', 'المشروع / العميل') }}</th><th>{{ L('Action', 'الإجراء') }}</th><th>{{ L('Detail', 'التفاصيل') }}</th></tr></thead><tbody>
+{% for a in rows %}<tr><td class="first num small">{{ dt(a.at) }}</td><td data-l="{{ L('Project', 'المشروع') }}">{% if a.project_id %}<a href="{{ url_for('project_view', pid=a.project_id, tab='activity') }}"><bdi dir="ltr">{{ a.number }}</bdi> {{ a.project_name }}</a>{% elif a.client_id %}<a href="{{ url_for('client_view', cid=a.client_id) }}">{{ a.client_name }}</a>{% endif %}</td><td data-l="{{ L('Action', 'الإجراء') }}"><code>{{ a.action }}</code></td><td data-l="{{ L('Detail', 'التفاصيل') }}" dir="auto" class="small">{{ a.detail }}</td></tr>
+{% else %}<tr><td colspan="4" class="empty">—</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

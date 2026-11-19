@@ -1,0 +1,7 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf with context %}
+{% block body %}
+<h1>{{ L('Import preview', 'معاينة الاستيراد') }}</h1>
+<div class="tbl-wrap"><table><thead><tr><th>{{ L('Action', 'الإجراء') }}</th><th>{{ L('Entry', 'القاعدة') }}</th><th>{{ L('Why', 'السبب') }}</th></tr></thead><tbody>
+{% for it in plan %}<tr><td><span class="b b-{{ {'new':'approved','update':'sent','unchanged':'none','conflict':'unpaid'}[it.action] }}">{{ it.action }}</span></td><td dir="auto">{{ it.entry.revisions[-1].text }} <span class="small muted">({{ it.entry.scope }})</span></td><td class="small">{{ it.reason }}</td></tr>{% endfor %}</tbody></table></div>
+<form method="post" action="{{ url_for('archive_import') }}" style="margin-top:10px">{{ csrf() }}<input type="hidden" name="payload" value="{{ payload }}"><input type="hidden" name="apply" value="1"><button class="btn primary">{{ L('Apply import (conflicts are skipped)', 'طبّق الاستيراد (التعارضات بتنترك)') }}</button> <a class="btn" href="{{ url_for('archive_page') }}">{{ L('Cancel', 'إلغاء') }}</a></form>
+{% endblock %}

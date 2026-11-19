@@ -1,0 +1,77 @@
+{% extends 'base.html' %}{% from '_m.html' import badge, money with context %}
+{% block body %}
+<div class="spread">
+  <h1>{{ L('Projects', 'المشاريع') }}</h1>
+  <a class="btn primary" href="{{ url_for('project_new') }}">+ {{ L('New project', 'مشروع جديد') }}</a>
+</div>
+
+{% if first_use %}
+<div class="card"><h2>{{ L('Welcome to BASE Office', 'أهلاً بنظام بيس') }}</h2>
+<ol>
+  <li>{{ L('Check company name, email and logo in', 'تأكد من اسم الشركة والإيميل واللوغو من') }} <a href="{{ url_for('settings_page') }}">{{ L('Settings', 'الإعدادات') }}</a>.</li>
+  <li>{{ L('Press New project: a client name and a project name are enough to save.', 'اضغط مشروع جديد: اسم العميل واسم المشروع بيكفوا للحفظ.') }}</li>
+  <li>{{ L('Add your working rules in Archive so they show on every new BOQ.', 'ضيف طرق شغلك بالأرشيف لتطلع مع كل جدول كميات جديد.') }}</li>
+</ol></div>
+{% endif %}
+
+<div class="metrics">
+  <a class="metric" href="{{ url_for('payments_list', month=mt.month) }}"><div class="k">{{ L('Cash received this month', 'المستلم هالشهر') }}</div><div class="v">{{ money(mt.cash) }} <small>{{ L('KWD', 'د.ك') }}</small></div><div class="s">{{ mt.cash_count }} {{ L('payments by date received', 'دفعات حسب تاريخ الاستلام') }}</div></a>
+  <a class="metric" href="{{ url_for('collections') }}"><div class="k">{{ L('Outstanding on agreed jobs', 'المتبقي على المشاريع المتفق عليها') }}</div><div class="v">{{ money(mt.outstanding) }} <small>{{ L('KWD', 'د.ك') }}</small></div>{% if mt.credits %}<div class="s">{{ L('Client credits', 'أرصدة دائنة للعملاء') }}: {{ money(mt.credits) }}</div>{% endif %}</a>
+  <a class="metric" href="{{ url_for('dashboard', f='open') }}"><div class="k">{{ L('Open projects', 'مشاريع مفتوحة') }}</div><div class="v">{{ mt.open }}</div></a>
+  <a class="metric" href="{{ url_for('quotations_list', status='sent') }}"><div class="k">{{ L('Quotations awaiting reply', 'عروض بانتظار الرد') }}</div><div class="v">{{ mt.awaiting }}</div></a>
+</div>
+
+<div class="questions">
+  <div class="card q"><h3>{{ L('What do I work on today?', 'شو لازم اشتغل اليوم؟') }}</h3>
+    {% if today_rows %}<ul>{% for r in today_rows[:6] %}<li><a href="{{ url_for('project_view', pid=r.id) }}">{{ r.name }}</a><span>{% if r.overdue %}<span class="b b-overdue">{{ L('Overdue', 'متأخر') }}</span>{% endif %} {{ badge(WORK, r.work_status) }} <span class="small muted">{{ d(r.due_date) }}</span></span></li>{% endfor %}</ul>
+    {% else %}<p class="muted small">{{ L('Nothing due in the next 3 days.', 'ما في شي مستحق خلال ٣ أيام.') }}</p>{% endif %}
+    <a class="small" href="{{ url_for('dashboard', f='today') }}">{{ L('Open list', 'افتح القائمة') }}</a></div>
+  <div class="card q"><h3>{{ L('Ready but not submitted', 'جاهز وما انسلّم') }}</h3>
+    {% if ready %}<ul>{% for r in ready[:6] %}<li><a href="{{ url_for('project_view', pid=r.id, tab='drawings') }}">{{ r.name }}</a><span>{{ badge(SUB, r.sub.status) }}</span></li>{% endfor %}</ul>
+    {% else %}<p class="muted small">{{ L('Nothing waiting to be sent.', 'ما في شي جاهز ينتظر التسليم.') }}</p>{% endif %}
+    <a class="small" href="{{ url_for('dashboard', f='ready') }}">{{ L('Open list', 'افتح القائمة') }}</a></div>
+  <div class="card q"><h3>{{ L('Who owes me money?', 'مين عليه مصاري؟') }}</h3>
+    {% if owed %}<ul>{% for r in owed[:6] %}<li><span><a href="{{ url_for('project_view', pid=r.id, tab='payments') }}">{{ r.client_name }}</a> <span class="small muted">{{ r.name }}</span></span>{{ money(r.money.balance) }}</li>{% endfor %}</ul>
+    {% else %}<p class="muted small">{{ L('No delivered job has a balance.', 'ما في مشروع مسلّم وعليه رصيد.') }}</p>{% endif %}
+    <a class="small" href="{{ url_for('collections') }}">{{ L('Collection list', 'قائمة التحصيل') }}</a></div>
+</div>
+
+<div class="toolbar">
+  <form class="search" method="get" role="search">
+    <input type="hidden" name="f" value="{{ flt }}">
+    <input type="search" name="q" value="{{ q }}" placeholder="{{ L('Search project, client, area, plot, number (Arabic or English)', 'ابحث: مشروع، عميل، منطقة، قسيمة، رقم') }}" aria-label="{{ L('Search', 'بحث') }}">
+    <button class="btn">{{ L('Search', 'بحث') }}</button>
+  </form>
+</div>
+<nav class="chips" aria-label="{{ L('Filters', 'الفلاتر') }}">
+  {% for k in ['all','today','not_submitted','ready','partial','waiting','delivered_balance','overdue'] %}
+  <a class="chip {{ 'on' if flt == k }}" href="{{ url_for('dashboard', f=k, q=q) }}">{{ label(FILTERS, k) }}{% if k in mt.counts %}<span class="c">{{ mt.counts[k] }}</span>{% endif %}</a>
+  {% endfor %}
+  <a class="chip {{ 'on' if flt == 'archived' }}" href="{{ url_for('dashboard', f='archived') }}">{{ label(FILTERS, 'archived') }}</a>
+</nav>
+
+{% if rows %}
+<div class="tbl-wrap"><table class="cards">
+<thead><tr><th>{{ L('No.', 'الرقم') }}</th><th>{{ L('Project', 'المشروع') }}</th><th>{{ L('Client', 'العميل') }}</th><th>{{ L('Location', 'الموقع') }}</th><th>{{ L('Scope', 'النطاق') }}</th><th>{{ L('Due', 'التسليم') }}</th><th>{{ L('Work', 'العمل') }}</th><th>{{ L('Submission', 'التسليم') }}</th><th class="r">{{ L('Fee', 'الأتعاب') }}</th><th class="r">{{ L('Received', 'المستلم') }}</th><th class="r">{{ L('Balance', 'المتبقي') }}</th></tr></thead>
+<tbody>
+{% for r in rows %}
+<tr class="{{ 'overdue' if r.overdue }}">
+  <td data-l="{{ L('No.', 'الرقم') }}" class="hide-m"><bdi dir="ltr" class="num">{{ r.number }}</bdi></td>
+  <td class="first"><a class="pname" href="{{ url_for('project_view', pid=r.id) }}">{{ r.name }}</a>{% if r.overdue %} <span class="b b-overdue">{{ L('Overdue', 'متأخر') }}</span>{% endif %}
+    <div class="small muted"><bdi dir="ltr">{{ r.number }}</bdi>{% if flt == 'waiting' and r.missing_info %} · {{ L('Missing', 'ناقص') }}: {{ r.missing_info.splitlines()[-1] }}{% endif %}</div></td>
+  <td data-l="{{ L('Client', 'العميل') }}">{{ r.client_name }}</td>
+  <td data-l="{{ L('Location', 'الموقع') }}" class="hide-m">{{ r.area or '' }}{% if r.plot %} · {{ L('Plot', 'قسيمة') }} {{ r.plot }}{% endif %}</td>
+  <td data-l="{{ L('Scope', 'النطاق') }}" class="hide-m small">{% for s in r.scope_list %}{{ scope_label(s) }}{{ ', ' if not loop.last }}{% endfor %}</td>
+  <td data-l="{{ L('Due', 'التسليم') }}" class="num">{{ d(r.due_date) }}</td>
+  <td data-l="{{ L('Work', 'العمل') }}">{{ badge(WORK, r.work_status) }}</td>
+  <td data-l="{{ L('Submission', 'التسليم') }}">{{ badge(SUB, r.sub.status) }}</td>
+  <td data-l="{{ L('Fee', 'الأتعاب') }}" class="r">{% if r.money.fee is none %}<span class="b b-pending_agreement">{{ label(MONEY, 'pending_agreement') }}</span>{% else %}{{ money(r.money.fee) }}{% endif %}</td>
+  <td data-l="{{ L('Received', 'المستلم') }}" class="r">{{ money(r.money.received) }}</td>
+  <td data-l="{{ L('Balance', 'المتبقي') }}" class="r"><strong>{% if r.money.balance is none %}—{% elif r.money.balance < 0 %}<span class="b b-credit">{{ L('Credit', 'دائن') }} {{ kwd(-r.money.balance) }}</span>{% else %}{{ money(r.money.balance) }}{% endif %}</strong></td>
+</tr>
+{% endfor %}
+</tbody></table></div>
+{% else %}
+<div class="card empty">{{ L('No projects match this view.', 'ما في مشاريع بهالفلتر.') }} {% if q %}<a href="{{ url_for('dashboard', f=flt) }}">{{ L('Clear search', 'امسح البحث') }}</a>{% endif %}</div>
+{% endif %}
+{% endblock %}

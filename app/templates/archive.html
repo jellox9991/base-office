@@ -1,0 +1,40 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf with context %}
+{% set TOP = ['concrete','rebar','blockwork','finishes','measurement','revit','client_excel','quotations','delivery','other'] %}
+{% block body %}
+<div class="spread"><h1>{{ L('Archive', 'الأرشيف') }}</h1>
+<div class="head-actions"><a class="btn sm" href="{{ url_for('archive_markdown') }}">{{ L('Active rules (Markdown for Claude)', 'القواعد الفعالة (Markdown لـ Claude)') }}</a><a class="btn sm" href="{{ url_for('archive_export') }}">{{ L('Export JSON', 'تصدير JSON') }}</a></div></div>
+<p class="muted">{{ L('Your working methods, client preferences and project decisions. Approved rules show on every applicable BOQ with the reason, and each issued BOQ keeps the exact revision used.', 'طرق شغلك وتفضيلات العملاء وقرارات المشاريع. القواعد المعتمدة بتطلع مع كل جدول كميات بينطبق عليه مع السبب، وكل تسليم بيحتفظ بالمراجعة المستخدمة بالضبط.') }}</p>
+
+<form class="card row" method="get" role="search">
+  <div class="field" style="flex:2 1 240px"><label for="aq">{{ L('Search (Arabic or English)', 'بحث (عربي أو إنجليزي)') }}</label><input id="aq" type="search" name="q" value="{{ f.get('q', '') }}"></div>
+  <div class="field"><label for="atp">{{ L('Topic', 'الموضوع') }}</label><select id="atp" name="topic"><option value="">—</option>{% for k in TOP %}<option {{ 'selected' if f.get('topic') == k }}>{{ k }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="asc">{{ L('Scope', 'النطاق') }}</label><select id="asc" name="scope"><option value="">—</option>{% for k in ['company','client','project'] %}<option {{ 'selected' if f.get('scope') == k }}>{{ k }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="ast">{{ L('Status', 'الحالة') }}</label><select id="ast" name="status"><option value="">—</option>{% for k in ['approved','draft','example'] %}<option {{ 'selected' if f.get('status') == k }}>{{ k }}</option>{% endfor %}</select></div>
+  <div class="field"><label for="acl">{{ L('Client', 'العميل') }}</label><select id="acl" name="client_id"><option value="">—</option>{% for c in clients %}<option value="{{ c.id }}" {{ 'selected' if f.get('client_id') == c.id|string }}>{{ c.name }}</option>{% endfor %}</select></div>
+  <div class="field" style="flex:0 0 auto"><label class="checks"><input type="checkbox" name="retired" value="1" {{ 'checked' if f.get('retired') }}> {{ L('Include retired', 'مع الملغاة') }}</label><button class="btn">{{ L('Filter', 'فلترة') }}</button></div>
+</form>
+
+{% for r in rules %}
+<div class="rule" style="{{ '' if r.active else 'opacity:.55' }}">
+  <div dir="auto"><a href="{{ url_for('archive_rule', rid=r.id) }}"><strong>#{{ r.id }}</strong></a> {{ r.text }}</div>
+  <div class="small muted">rev {{ r.current_revision }} · <span class="b b-{{ r.status }}">{{ r.status }}</span> · {{ r.scope }}{% if r.scope == 'client' %}: {{ r.client_name }}{% elif r.scope == 'project' %}: <bdi dir="ltr">{{ r.project_number }}</bdi> {{ r.project_name }}{% endif %}{% if r.topic %} · {{ r.topic }}{% endif %}{% if r.trade %} · {{ L('when in scope', 'إذا ضمن النطاق') }}: {{ scope_label(r.trade) }}{% endif %}{% if not r.active %} · {{ L('retired', 'ملغاة') }}{% endif %}</div>
+</div>
+{% else %}<div class="card empty">{{ L('No rules match.', 'ما في قواعد مطابقة.') }}</div>{% endfor %}
+
+<div class="card" style="margin-top:14px"><h3>{{ L('Save a company or client rule', 'احفظ قاعدة عامة أو للعميل') }}</h3>
+<form method="post">{{ csrf() }}<input type="hidden" name="request_key" value="{{ new_key }}">
+  <div class="field"><label for="nt">{{ L('Instruction in your own words', 'التعليمة بكلماتك') }}</label><textarea id="nt" name="text" dir="auto" required></textarea></div>
+  <div class="row">
+    <div class="field"><label for="ns">{{ L('Applies to', 'بتنطبق على') }}</label><select id="ns" name="scope"><option value="company">{{ L('All projects', 'كل المشاريع') }}</option><option value="client">{{ L('One client', 'عميل محدد') }}</option></select></div>
+    <div class="field"><label for="nc">{{ L('Client', 'العميل') }}</label><select id="nc" name="client_id"><option value="">—</option>{% for c in clients %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="ntp">{{ L('Topic', 'الموضوع') }}</label><select id="ntp" name="topic"><option value="">—</option>{% for k in TOP %}<option>{{ k }}</option>{% endfor %}</select></div>
+    <div class="field"><label for="ntr">{{ L('Only when this trade is in scope', 'بس إذا هالبند ضمن النطاق') }}</label><select id="ntr" name="trade"><option value="">—</option>{% for s in SCOPES %}<option value="{{ s }}">{{ scope_label(s) }}</option>{% endfor %}</select></div>
+  </div>
+  <div class="field"><label for="nsrc">{{ L('Source', 'المصدر') }}</label><input id="nsrc" name="source_ref"></div>
+  <button class="btn primary">{{ L('Save', 'احفظ') }}</button>
+  <p class="hint">{{ L('Project-only rules and decisions are saved from the project\'s Archive tab.', 'القواعد والقرارات الخاصة بمشروع بتنحفظ من تبويب الأرشيف بالمشروع.') }}</p>
+</form></div>
+
+<details class="sec"><summary>{{ L('Import an Archive export (preview first)', 'استيراد ملف أرشيف (مع معاينة)') }}</summary><div class="in">
+<form method="post" action="{{ url_for('archive_import') }}" enctype="multipart/form-data">{{ csrf() }}<input type="file" name="file" accept=".json" required> <button class="btn">{{ L('Preview import', 'معاينة الاستيراد') }}</button></form></div></details>
+{% endblock %}

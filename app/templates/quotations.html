@@ -1,0 +1,9 @@
+{% extends 'base.html' %}{% from '_m.html' import badge, money with context %}
+{% block body %}
+<h1>{{ L('Quotations', 'العروض') }}</h1>
+<nav class="chips">{% for k in ['', 'draft', 'sent', 'accepted', 'rejected', 'expired', 'superseded'] %}<a class="chip {{ 'on' if st == k }}" href="{{ url_for('quotations_list', status=k) }}">{{ label(QUOTE, k) if k else L('All', 'الكل') }}</a>{% endfor %}</nav>
+<p class="small muted">{{ L('Quotation values are offers, not cash. Only an accepted revision sets a project fee.', 'قيم العروض مو مصاري مستلمة. بس المراجعة المقبولة بتحدد أتعاب المشروع.') }}</p>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Quotation', 'العرض') }}</th><th>{{ L('Client', 'العميل') }}</th><th>{{ L('Project', 'المشروع') }}</th><th>{{ L('Date', 'التاريخ') }}</th><th>{{ L('Status', 'الحالة') }}</th><th class="r">{{ L('Total (KWD)', 'الإجمالي (د.ك)') }}</th></tr></thead><tbody>
+{% for q in rows %}<tr><td class="first"><a href="{{ url_for('quotation_view', qid=q.id) }}"><bdi dir="ltr">{{ q.number }} Rev {{ q.revision }}</bdi></a></td><td data-l="{{ L('Client', 'العميل') }}">{{ q.client_name }}</td><td data-l="{{ L('Project', 'المشروع') }}">{% if q.project_id %}<a href="{{ url_for('project_view', pid=q.project_id) }}">{{ q.project_name }}</a>{% else %}—{% endif %}</td><td data-l="{{ L('Date', 'التاريخ') }}" class="num">{{ d(q.quote_date) }}</td><td data-l="{{ L('Status', 'الحالة') }}">{{ badge(QUOTE, q.status) }}</td><td data-l="{{ L('Total', 'الإجمالي') }}" class="r">{{ money(totals[q.id]) }}</td></tr>
+{% else %}<tr><td colspan="6" class="empty">{{ L('No quotations. Create one from a client or project page.', 'ما في عروض. اعمل عرض من صفحة عميل أو مشروع.') }}</td></tr>{% endfor %}</tbody></table></div>
+{% endblock %}

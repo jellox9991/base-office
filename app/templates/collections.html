@@ -1,0 +1,30 @@
+{% extends 'base.html' %}{% from '_m.html' import badge, money with context %}
+{% block body %}
+<h1>{{ L('Who owes me money', 'مين عليه مصاري') }}</h1>
+<h2>{{ L('Delivered with balance', 'مُسلَّم وعليه رصيد') }}</h2>
+{% if delivered %}
+<div class="tbl-wrap"><table class="cards">
+<thead><tr><th>{{ L('Client', 'العميل') }}</th><th>{{ L('Project', 'المشروع') }}</th><th>{{ L('Delivered', 'تاريخ التسليم') }}</th><th class="r">{{ L('Fee', 'الأتعاب') }}</th><th class="r">{{ L('Received', 'المستلم') }}</th><th class="r">{{ L('Amount due', 'المستحق') }}</th><th>{{ L('Contact', 'تواصل') }}</th></tr></thead>
+<tbody>{% for r in delivered %}
+<tr><td class="first"><strong>{{ r.client_name }}</strong></td>
+<td data-l="{{ L('Project', 'المشروع') }}"><a href="{{ url_for('project_view', pid=r.id, tab='payments') }}">{{ r.name }}</a> <span class="small muted"><bdi dir="ltr">{{ r.number }}</bdi></span></td>
+<td data-l="{{ L('Delivered', 'تاريخ التسليم') }}" class="num">{{ d(r.sub.last_date) }}</td>
+<td data-l="{{ L('Fee', 'الأتعاب') }}" class="r">{{ money(r.money.fee) }}</td>
+<td data-l="{{ L('Received', 'المستلم') }}" class="r">{{ money(r.money.received) }}</td>
+<td data-l="{{ L('Amount due', 'المستحق') }}" class="r"><strong>{{ money(r.money.balance) }}</strong></td>
+<td data-l="{{ L('Contact', 'تواصل') }}">{% set w = wa(r.client_whatsapp or r.client_phone) %}{% if w %}<a class="btn sm" href="{{ w }}" target="_blank" rel="noopener">WhatsApp <bdi dir="ltr">{{ r.client_whatsapp or r.client_phone }}</bdi></a>{% endif %}
+  <a class="btn sm" href="{{ url_for('email_draft', pid=r.id, kind='payment') }}">{{ L('Payment email', 'إيميل متابعة') }}</a></td></tr>
+{% endfor %}</tbody></table></div>
+{% else %}<div class="card empty">{{ L('No delivered job has an outstanding balance.', 'ما في مشروع مسلّم وعليه رصيد.') }}</div>{% endif %}
+
+{% if other %}
+<h2>{{ L('Agreed jobs with a balance, not fully delivered yet', 'مشاريع متفق عليها وعليها رصيد ولسا ما انسلمت كاملة') }}</h2>
+<div class="tbl-wrap"><table class="cards"><thead><tr><th>{{ L('Client', 'العميل') }}</th><th>{{ L('Project', 'المشروع') }}</th><th>{{ L('Submission', 'التسليم') }}</th><th class="r">{{ L('Balance', 'المتبقي') }}</th></tr></thead><tbody>
+{% for r in other %}<tr><td class="first">{{ r.client_name }}</td><td data-l="{{ L('Project', 'المشروع') }}"><a href="{{ url_for('project_view', pid=r.id, tab='payments') }}">{{ r.name }}</a></td><td data-l="{{ L('Submission', 'التسليم') }}">{{ badge(SUB, r.sub.status) }}</td><td data-l="{{ L('Balance', 'المتبقي') }}" class="r">{{ money(r.money.balance) }}</td></tr>{% endfor %}
+</tbody></table></div>{% endif %}
+
+<h2>{{ L('By client', 'حسب العميل') }}</h2>
+<div class="tbl-wrap"><table><thead><tr><th>{{ L('Client', 'العميل') }}</th><th class="r">{{ L('Projects', 'مشاريع') }}</th><th class="r">{{ L('Outstanding', 'المتبقي') }}</th></tr></thead><tbody>
+{% for cid, c in by_client.items() %}<tr><td><a href="{{ url_for('client_view', cid=cid) }}">{{ c.name }}</a></td><td class="r">{{ c.n }}</td><td class="r">{{ money(c.total) }}</td></tr>{% else %}<tr><td colspan="3" class="muted">—</td></tr>{% endfor %}
+</tbody></table></div>
+{% endblock %}

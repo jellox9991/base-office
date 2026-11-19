@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block body %}<div class="card"><h1>{{ e.code }} {{ e.name }}</h1><p>{{ e.description }}</p><a class="btn" href="javascript:history.back()">{{ L('Go back', 'رجوع') }}</a> <a class="btn" href="{{ url_for('dashboard') }}">{{ L('Projects', 'المشاريع') }}</a></div>{% endblock %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}{% from '_m.html' import csrf, badge, money with context %}
+{% block body %}
+<div class="spread"><div><h1><bdi dir="ltr">{{ q.number }} Rev {{ q.revision }}</bdi> {{ badge(QUOTE, q.status) }}</h1>
+<p class="muted">{{ client.name }}{% if project %} · <a href="{{ url_for('project_view', pid=project.id, tab='quotations') }}">{{ project.name }}</a>{% endif %} · {{ d(q.quote_date) }} · {{ 'عربي' if q.language == 'ar' else 'English' }}</p></div>
+<div class="head-actions"><a class="btn" href="{{ url_for('quotation_pdf', qid=q.id) }}" target="_blank">{{ L('Open PDF', 'افتح PDF') }}{% if not q.pdf_stored_name %} ({{ L('draft preview', 'معاينة') }}){% endif %}</a>
+{% if project %}<a class="btn" href="{{ url_for('email_draft', pid=project.id, kind='quotation', quotation_id=q.id) }}">{{ L('Email draft', 'مسودة إيميل') }}</a>{% endif %}</div></div>
+{% if q.pdf_stored_name %}<p class="small muted">{{ L('Issued', 'أُصدر') }} {{ dt(q.sent_at) }} · {{ L('frozen PDF, sha256', 'نسخة مجمدة، sha256') }} <code>{{ q.pdf_sha256[:16] }}</code></p>{% endif %}
+<div class="card"><div class="tbl-wrap"><table><thead><tr><th>#</th><th>{{ L('Service', 'الخدمة') }}</th><th class="r">{{ L('Amount (KWD)', 'المبلغ (د.ك)') }}</th></tr></thead><tbody>
+{% for it in items %}<tr><td>{{ loop.index }}</td><td dir="auto">{{ it.description }}</td><td class="r">{{ money(it.amount_fils) }}</td></tr>{% endfor %}
+{% if q.discount_fils %}<tr><td></td><td>{{ L('Discount', 'الخصم') }}</td><td class="r">-{{ money(q.discount_fils) }}</td></tr>{% endif %}
+<tr><td></td><th>{{ L('Total', 'الإجمالي') }}</th><th class="r">{{ money(total) }}</th></tr></tbody></table></div>
+<dl class="kv" style="margin-top:10px"><dt>{{ L('Delivery', 'التسليم') }}</dt><dd>{{ q.delivery_period or '—' }}</dd><dt>{{ L('Payment terms', 'شروط الدفع') }}</dt><dd>{{ q.payment_terms or '—' }}</dd><dt>{{ L('Exclusions', 'الاستثناءات') }}</dt><dd>{{ q.exclusions or '—' }}</dd><dt>{{ L('Validity', 'الصلاحية') }}</dt><dd>{{ q.validity_days or '—' }} {{ L('days', 'يوم') }}</dd></dl></div>
+
+<div class="card"><h3>{{ L('Actions', 'الإجراءات') }}</h3><div class="head-actions">
+{% if q.status == 'draft' %}
+  <a class="btn" href="{{ url_for('quotation_edit', qid=q.id) }}">{{ L('Edit draft', 'عدّل المسودة') }}</a>
+  <form method="post" action="{{ url_for('quotation_status', qid=q.id) }}">{{ csrf() }}<button class="btn primary" name="action" value="sent">{{ L('Mark as sent (freeze PDF)', 'تم الإرسال (تجميد النسخة)') }}</button></form>
+{% endif %}
+{% if q.status in ('sent', 'draft') %}
+  <form method="post" action="{{ url_for('quotation_status', qid=q.id) }}" class="row" style="align-items:flex-end">{{ csrf() }}
+    {% if not project %}<div class="field"><label for="ap">{{ L('For project', 'للمشروع') }}</label><select id="ap" name="project_id"><option value="">—</option>{% for cp in client_projects %}<option value="{{ cp.id }}">{{ cp.number }} {{ cp.name }}</option>{% endfor %}</select>
+    <label class="checks"><input type="checkbox" name="create_project" value="1"> {{ L('or create a new project', 'أو اعمل مشروع جديد') }}</label><input name="project_name" placeholder="{{ L('New project name', 'اسم المشروع الجديد') }}"></div>{% endif %}
+    <div class="field" style="flex:0 0 auto"><button class="btn primary" name="action" value="accept">{{ L('Client accepted', 'العميل وافق') }}</button></div>
+  </form>
+  <form method="post" action="{{ url_for('quotation_status', qid=q.id) }}">{{ csrf() }}<button class="btn" name="action" value="rejected">{{ L('Rejected', 'مرفوض') }}</button> <button class="btn" name="action" value="expired">{{ L('Expired', 'منتهي') }}</button></form>
+{% endif %}
+{% if q.status != 'draft' %}<form method="post" action="{{ url_for('quotation_status', qid=q.id) }}">{{ csrf() }}<button class="btn" name="action" value="revise">{{ L('Create revision (change fee or scope)', 'اعمل مراجعة (تعديل السعر أو النطاق)') }}</button></form>{% endif %}
+</div>
+<p class="hint">{{ L('A sent revision cannot be edited: the PDF the client received is kept exactly. Accepting sets the project agreed fee and scope; it never creates a duplicate project.', 'المراجعة المرسلة ما بتتعدل: بنحتفظ بالنسخة اللي وصلت للعميل بالضبط. القبول بيحدد أتعاب ونطاق المشروع وما بيعمل مشروع مكرر.') }}</p></div>
+
+<h3>{{ L('Revisions', 'المراجعات') }}</h3>
+<ul>{% for r in revisions %}<li><a href="{{ url_for('quotation_view', qid=r.id) }}">Rev {{ r.revision }}</a> {{ badge(QUOTE, r.status) }} {{ d(r.quote_date) }}</li>{% endfor %}</ul>
+{% endblock %}
